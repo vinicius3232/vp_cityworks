@@ -156,6 +156,16 @@ sql/migration.sql      tabela com PRIMARY KEY
 
 ## 8. Funcionalidades e roadmap
 
+### 8.0 Frentes e modos de tarefa (SADOT)
+- **Motor por modo** (`discipline.taskMode[task]`): `minigame` (NUI solda/voltímetro/fiação),
+  `drill` (alvo com vida — britadeira, sincronizado via `hitTarget`), `build` (progressbar + props),
+  `tow` (frente `kind='towing'`: carregar veículo no flatbed → entregar num ponto).
+- **6 frentes** (`Config.DisciplineOrder`): electrician, roadwork (drill), construction (build),
+  signage (build+minigame), streetlight (minigame), towing (tow). Menu: frente → região.
+- **Dispatch sob demanda** (`/pedirservico`): cidadão paga taxa; equipes em serviço da frente
+  recebem blip+notify no local.
+- ⚠️ Em-game tuning: física do lift e do attach do flatbed (guincho); coords das frentes novas.
+
 ### 9.1 Implementado ✅
 - Lobby coop (criar, convidar por ID c/ proximidade, aceitar, expulsar, encerrar ao sair).
 - Seleção de região + gate de nível mínimo.

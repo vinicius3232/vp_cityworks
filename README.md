@@ -1,6 +1,9 @@
 # vp_cityworks — Secretaria de Obras (multi-frente / SADOT)
 
-Empresa de manutenção da cidade para **QBox** (nativo ox_lib/ox_inventory/ox_target), com **várias frentes de trabalho** cooperativas sob a mesma central. Na v1 a frente **Eletricista** está completa; o motor é genérico (`Config.Disciplines`) e novas frentes (asfalto, construção, sinalização, iluminação) entram só adicionando config.
+Empresa de manutenção da cidade para **QBox** (nativo ox_lib/ox_inventory/ox_target), com **várias frentes de trabalho** cooperativas sob a mesma central.
+
+**Frentes (6):** ⚡ Eletricista · 🛣️ Asfalto/Vias · 🏗️ Construção · 🪧 Sinalização · 💡 Iluminação · 🚛 Guincho.
+**Modos de tarefa:** `minigame` (3 NUI: solda/voltímetro/fiação), `drill` (alvo com vida), `build` (progress+props), `tow` (rebocar veículo). **Dispatch sob demanda** (`/pedirservico`). Motor genérico (`Config.Disciplines`) — novas frentes entram só adicionando config.
 
 > Script feito por **LORD32 aka Vini32 e Dooc**
 
