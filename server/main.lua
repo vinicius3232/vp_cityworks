@@ -116,6 +116,10 @@ lib.callback.register('vp_cityworks:openTarget', function(src, data)
     -- exige equipamento?
     local req = disc.requiresEquipment[target.type]
     if req and not target.equipped then return { needEquipment = req } end
+    -- exige tensao desligada (2 papeis)?
+    if disc.needsPower and disc.needsPower[target.type] and not target.powerCut then
+        return { needPower = true }
+    end
     target.openBy = cid
     target.openAt = GetGameTimer() -- anti-exploit: marca quando abriu
     return { ok = true, type = target.type }

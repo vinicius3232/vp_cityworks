@@ -69,6 +69,25 @@ RegisterNetEvent('vp_cityworks:completeTarget', function(targetId, success)
     end
 end)
 
+-- 2 PAPEIS: desligar a tensao de um alvo (libera o reparo p/ todos)
+RegisterNetEvent('vp_cityworks:cutPower', function(targetId)
+    local src = source
+    if type(targetId) ~= 'number' then return end
+    if not Security.canAct(src, 'cutPower', 1500) then return end
+    local lobby, cid = vpGetLobbyBySrc(src)
+    if not lobby or not lobby.started or not lobby.mission then return end
+    local target = lobby.mission.targets[targetId]
+    if not target or target.fixed or target.powerCut then return end
+    local disc = Utils.discipline(lobby.disciplineId)
+    if not (disc.needsPower and disc.needsPower[target.type]) then return end
+    if not Security.isNear(src, target.coords, (disc.targetRadius[target.type]) or 3.0) then
+        Security.logSuspicious(src, 'cutPower fora de alcance', { targetId = targetId })
+        return
+    end
+    target.powerCut = true
+    vpBroadcast(lobby, 'vp_cityworks:powerCut', target.id)
+end)
+
 -- Liberar alvo sem concluir (jogador fechou/cancelou)
 RegisterNetEvent('vp_cityworks:closeTarget', function(targetId)
     local src = source

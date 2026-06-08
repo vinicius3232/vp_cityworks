@@ -10,6 +10,7 @@ local missionBlips = {}
 local smokeFx = {}      -- [targetId] = ptfxHandle
 local deliveryBlip = nil
 local vehicleBlips = {} -- blips que seguem os veiculos do job
+local savedClothes = nil -- componentes originais p/ restaurar (cloakroom)
 
 ---------------------------------------------------------------------
 -- HELPERS
@@ -40,6 +41,33 @@ local function stopSmoke(targetId)
         StopParticleFxLooped(smokeFx[targetId], 0)
         smokeFx[targetId] = nil
     end
+end
+
+--- Roupa de trabalho: salva os componentes atuais e aplica os da frente.
+local function applyWorkClothes()
+    if not Config.WorkClothes.enable or not ActiveDiscipline or not ActiveDiscipline.clothes then return end
+    local ped = cache.ped
+    local set = IsPedMale(ped) and ActiveDiscipline.clothes.male or ActiveDiscipline.clothes.female
+    if not set or #set == 0 then return end
+    savedClothes = {}
+    for _, c in ipairs(set) do
+        savedClothes[#savedClothes + 1] = {
+            id = c.componentId,
+            drawable = GetPedDrawableVariation(ped, c.componentId),
+            texture = GetPedTextureVariation(ped, c.componentId),
+        }
+        SetPedComponentVariation(ped, c.componentId, c.drawable, c.texture, 0)
+    end
+end
+
+--- Restaura os componentes salvos (fim/reset do job).
+local function restoreClothes()
+    if not savedClothes then return end
+    local ped = cache.ped
+    for _, c in ipairs(savedClothes) do
+        SetPedComponentVariation(ped, c.id, c.drawable, c.texture, 0)
+    end
+    savedClothes = nil
 end
 
 --- Cria um blip por veiculo do job e o mantem seguindo o carro.
@@ -78,6 +106,7 @@ local function clearMission()
     for id in pairs(smokeFx) do stopSmoke(id) end
     if deliveryBlip then RemoveBlip(deliveryBlip); deliveryBlip = nil end
     ClearEquipment() -- equipment.lua
+    restoreClothes() -- cloakroom
     SendNUIMessage({ action = 'HUD_HIDE' })
     CurrentMission = nil
     MissionRegion = nil
@@ -100,6 +129,8 @@ RegisterNetEvent('vp_cityworks:jobStarted', function(data)
     end
     -- blip(s) seguindo o(s) veiculo(s) do job
     StartVehicleBlips()
+    -- roupa de trabalho (cloakroom)
+    applyWorkClothes()
     -- HUD ao vivo
     SendNUIMessage({ action = 'HUD_SHOW', tasks = data.progress, players = data.players })
     lib.notify({ description = MissionRegion.title, type = 'inform' })
@@ -122,6 +153,13 @@ end)
 
 RegisterNetEvent('vp_cityworks:refreshScore', function(players)
     SendNUIMessage({ action = 'HUD_PLAYERS', players = players })
+end)
+
+-- 2 papeis: tensao desligada por alguem da equipe
+RegisterNetEvent('vp_cityworks:powerCut', function(targetId)
+    if CurrentMission and CurrentMission.targets[targetId] then
+        CurrentMission.targets[targetId].powerCut = true
+    end
 end)
 
 RegisterNetEvent('vp_cityworks:jobComplete', function(deliveryCoords)
@@ -150,6 +188,12 @@ CreateThread(function()
                 if not target.fixed then
                     local dist = #(pc - target.coords)
                     local radius = (ActiveDiscipline and ActiveDiscipline.targetRadius[target.type]) or 3.0
+                    -- seta vermelha alta (visivel de longe)
+                    if Config.RedArrowMarker and dist < 50.0 then
+                        sleep = 0
+                        DrawMarker(0, target.coords.x, target.coords.y, target.coords.z + 2.4,
+                            0,0,0, 0,0,0, 1.2,1.2,1.2, 220,30,30,200, true,true,2,nil,nil,false)
+                    end
                     if dist < 20.0 then
                         sleep = 0
                         startSmoke(id, target.coords)
@@ -157,9 +201,17 @@ CreateThread(function()
                             0,0,0, 0,0,0, 0.5,0.5,0.5, 0,255,0,180, false,false,2,nil,nil,false)
                         if dist < radius then
                             local req = ActiveDiscipline and ActiveDiscipline.requiresEquipment[target.type]
+                            local needsPower = ActiveDiscipline and ActiveDiscipline.needsPower
+                                and ActiveDiscipline.needsPower[target.type] and not target.powerCut
                             if req and not target.equipped then
                                 -- precisa de escada/lift: delega ao equipment.lua
                                 HandleEquipmentPrompt(target, req)
+                            elseif needsPower then
+                                -- 2 papeis: alguem precisa desligar a tensao primeiro
+                                DrawText3D(target.coords, locale('cut_power_prompt'))
+                                if IsControlJustReleased(0, 38) then
+                                    CutPower(target)
+                                end
                             else
                                 local label = (ActiveDiscipline and ActiveDiscipline.taskLabels[target.type]) or target.type
                                 DrawText3D(target.coords, ('[E] %s'):format(label))
@@ -178,6 +230,22 @@ CreateThread(function()
     end
 end)
 
+--- 2 papeis: desliga a tensao do alvo (progressbar) antes do reparo.
+function CutPower(target)
+    local time = (ActiveDiscipline and ActiveDiscipline.powerCutTime) or 4000
+    local ok = lib.progressBar({
+        duration = time,
+        label = locale('cutting_power'),
+        useWhileDead = false,
+        canCancel = true,
+        disable = { move = true, car = true, combat = true },
+        anim = { dict = 'mini@repair', clip = 'fixing_a_player' },
+    })
+    if ok then
+        TriggerServerEvent('vp_cityworks:cutPower', target.id)
+    end
+end
+
 function TryOpenTarget(target)
     local res = lib.callback.await('vp_cityworks:openTarget', false, { targetId = target.id })
     if not res then
@@ -187,6 +255,10 @@ function TryOpenTarget(target)
     if res.needEquipment then
         local key = res.needEquipment == 'ladder' and 'need_ladder' or 'need_lift'
         lib.notify({ description = locale(key), type = 'error' })
+        return
+    end
+    if res.needPower then
+        lib.notify({ description = locale('need_power'), type = 'error' })
         return
     end
     -- roda o minigame (minigames.lua) e envia resultado ao server

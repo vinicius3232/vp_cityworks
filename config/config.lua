@@ -62,6 +62,14 @@ Config.Equipment = {
     buildDistance = 8.0,
 }
 
+-- Roupa de trabalho (cloakroom): troca a roupa ao iniciar, restaura ao terminar.
+-- As pecas ficam em cada frente (discipline.clothes). Restauracao salva/repoe
+-- os componentes alterados (sem depender do sistema de skin do framework).
+Config.WorkClothes = { enable = true }
+
+-- Seta vermelha alta sobre os alvos (visivel de longe).
+Config.RedArrowMarker = true
+
 ---------------------------------------------------------------------
 -- MINIGAMES (compartilhado: dano + anti-skip). O mapeamento por tarefa
 -- fica em cada frente (discipline.minigames).
@@ -108,6 +116,27 @@ Config.Disciplines = {
         requiresEquipment = {
             fixStreetLamp = 'ladder',
             phonePole     = 'lift',
+        },
+        -- 2 PAPEIS: tarefas que exigem DESLIGAR A TENSAO antes do reparo.
+        -- Um colega corta a energia (progressbar) e ai o reparo libera.
+        needsPower    = { fixTrafo = true, fixHouseBoard = true },
+        powerCutTime  = 4000, -- ms do progressbar de desligar a tensao
+        -- Roupa de trabalho aplicada ao iniciar (cloakroom)
+        clothes = {
+            male = {
+                { componentId = 4, drawable = 129, texture = 3 },  -- pants
+                { componentId = 6, drawable = 57,  texture = 6 },  -- shoes
+                { componentId = 8, drawable = 15,  texture = 0 },  -- undershirt
+                { componentId = 11, drawable = 241, texture = 0 }, -- torso (jaqueta refletiva)
+                { componentId = 3, drawable = 19,  texture = 0 },  -- arms
+            },
+            female = {
+                { componentId = 4, drawable = 130, texture = 0 },
+                { componentId = 6, drawable = 25,  texture = 0 },
+                { componentId = 8, drawable = 15,  texture = 0 },
+                { componentId = 11, drawable = 247, texture = 0 },
+                { componentId = 3, drawable = 75,  texture = 0 },
+            },
         },
         targetRadius = {
             fixTrafo = 2.5, fixHouseBoard = 2.5, fixStreetLamp = 3.0,
