@@ -248,9 +248,122 @@ Config.Disciplines = {
         },
     },
 
-    -- FRENTES FUTURAS (Fase 2): roadwork, construction, signage, streetlight.
-    -- Estrutura igual a do eletricista; serao adicionadas aqui.
+    -----------------------------------------------------------------
+    -- ASFALTO / VIAS (modo DRILL — alvo com vida, britadeira)
+    -----------------------------------------------------------------
+    roadwork = {
+        id = 'roadwork', label = 'Asfalto / Vias', icon = 'road', minLevel = 0,
+        vehicle = { primary = `tiptruck`, secondary = `tiptruck`, fuel = 100.0 },
+        taskLabels = { pothole = 'Tapar Buraco', roadblock = 'Remover Bloqueio' },
+        requiresEquipment = {},
+        targetRadius = { pothole = 2.5, roadblock = 3.0, delivery = 10.0 },
+        taskMode = { pothole = 'drill', roadblock = 'drill' },
+        drill = {
+            pothole   = { health = 4, hitTime = 1500 },
+            roadblock = { health = 6, hitTime = 1500 },
+        },
+        regions = {
+            {
+                key = 1, title = 'Vias - Centro', minLevel = 0, maxPlayers = 4,
+                awards = { money = 6000, xp = 1100, coopMultiplier = 1.5 },
+                spawnCoords = { vec4(533.26, -1595.88, 28.52, 136.32), vec4(522.83, -1606.42, 28.64, 320.61) },
+                deliveryCoords = vec3(533.26, -1595.88, 28.52),
+                jobTasks = { { name = 'pothole', count = 3 }, { name = 'roadblock', count = 2 } },
+                pools = {
+                    pothole = { vec3(215.0, -810.0, 30.7), vec3(120.0, -1040.0, 29.0), vec3(-260.0, -690.0, 33.5), vec3(40.0, -1290.0, 29.2) },
+                    roadblock = { vec3(180.0, -930.0, 30.6), vec3(-70.0, -800.0, 44.0), vec3(300.0, -1150.0, 29.2) },
+                },
+            },
+        },
+    },
+
+    -----------------------------------------------------------------
+    -- CONSTRUCAO / OBRA (modo BUILD — progressbar + props)
+    -----------------------------------------------------------------
+    construction = {
+        id = 'construction', label = 'Construcao / Obra', icon = 'helmet-safety', minLevel = 3,
+        vehicle = { primary = `mixer`, secondary = `flatbed`, fuel = 100.0 },
+        taskLabels = { scaffold = 'Montar Andaime', wall = 'Levantar Muro' },
+        requiresEquipment = {},
+        targetRadius = { scaffold = 3.0, wall = 3.0, delivery = 10.0 },
+        taskMode = { scaffold = 'build', wall = 'build' },
+        build = {
+            scaffold = { time = 8000, prop = `prop_scaffold_02a`, zOffset = 1.0, heading = 0.0 },
+            wall     = { time = 6000, prop = `prop_barrier_work05`, zOffset = 1.0, heading = 0.0 },
+        },
+        regions = {
+            {
+                key = 1, title = 'Obra - Zona Sul', minLevel = 3, maxPlayers = 4,
+                awards = { money = 9000, xp = 1600, coopMultiplier = 1.5 },
+                spawnCoords = { vec4(533.26, -1595.88, 28.52, 136.32), vec4(522.83, -1606.42, 28.64, 320.61) },
+                deliveryCoords = vec3(533.26, -1595.88, 28.52),
+                jobTasks = { { name = 'scaffold', count = 2 }, { name = 'wall', count = 3 } },
+                pools = {
+                    scaffold = { vec3(-140.0, -970.0, 28.0), vec3(-120.0, -1010.0, 28.0), vec3(-90.0, -980.0, 28.0) },
+                    wall = { vec3(-150.0, -1000.0, 28.0), vec3(-110.0, -1030.0, 28.0), vec3(-80.0, -1000.0, 28.0), vec3(-130.0, -950.0, 28.0) },
+                },
+            },
+        },
+    },
+
+    -----------------------------------------------------------------
+    -- SINALIZACAO (BUILD: instalar placa | MINIGAME: pintar faixa)
+    -----------------------------------------------------------------
+    signage = {
+        id = 'signage', label = 'Sinalizacao', icon = 'sign-hanging', minLevel = 1,
+        vehicle = { primary = `utillitruck2`, secondary = `utillitruck3`, fuel = 100.0 },
+        taskLabels = { sign = 'Instalar Placa', paint = 'Pintar Faixa' },
+        requiresEquipment = {},
+        targetRadius = { sign = 2.5, paint = 2.5, delivery = 10.0 },
+        taskMode = { sign = 'build', paint = 'minigame' },
+        build = { sign = { time = 5000, prop = `prop_consign_01a`, zOffset = 1.0, heading = 0.0 } },
+        minigames = {
+            byTask = { paint = 'skillcheck' },
+            skillchecks = { paint = { 'easy', 'medium' }, default = { 'easy', 'medium' } },
+        },
+        regions = {
+            {
+                key = 1, title = 'Sinalizacao - Centro', minLevel = 1, maxPlayers = 4,
+                awards = { money = 5500, xp = 1000, coopMultiplier = 1.5 },
+                spawnCoords = { vec4(533.26, -1595.88, 28.52, 136.32), vec4(522.83, -1606.42, 28.64, 320.61) },
+                deliveryCoords = vec3(533.26, -1595.88, 28.52),
+                jobTasks = { { name = 'sign', count = 2 }, { name = 'paint', count = 3 } },
+                pools = {
+                    sign = { vec3(230.0, -870.0, 30.6), vec3(110.0, -1090.0, 29.2), vec3(-300.0, -710.0, 33.5) },
+                    paint = { vec3(200.0, -900.0, 30.6), vec3(90.0, -1110.0, 29.2), vec3(-280.0, -730.0, 33.5), vec3(60.0, -1270.0, 29.2) },
+                },
+            },
+        },
+    },
+
+    -----------------------------------------------------------------
+    -- ILUMINACAO PUBLICA (MINIGAME — trocar lampada, sem lift)
+    -----------------------------------------------------------------
+    streetlight = {
+        id = 'streetlight', label = 'Iluminacao', icon = 'lightbulb', minLevel = 0,
+        vehicle = { primary = `utillitruck2`, secondary = `utillitruck3`, fuel = 100.0 },
+        taskLabels = { bulb = 'Trocar Lampada' },
+        requiresEquipment = {},
+        targetRadius = { bulb = 2.5, delivery = 10.0 },
+        taskMode = { bulb = 'minigame' },
+        minigames = {
+            byTask = { bulb = 'panel' },
+            panel = { bulb = { panels = 9 }, default = { panels = 9 } },
+        },
+        regions = {
+            {
+                key = 1, title = 'Iluminacao - Centro', minLevel = 0, maxPlayers = 4,
+                awards = { money = 4500, xp = 900, coopMultiplier = 1.5 },
+                spawnCoords = { vec4(533.26, -1595.88, 28.52, 136.32), vec4(522.83, -1606.42, 28.64, 320.61) },
+                deliveryCoords = vec3(533.26, -1595.88, 28.52),
+                jobTasks = { { name = 'bulb', count = 4 } },
+                pools = {
+                    bulb = { vec3(296.49, -348.94, 49.62), vec3(300.07, -339.12, 50.92), vec3(303.89, -329.46, 51.08), vec3(268.28, -316.47, 51.2), vec3(286.73, -323.17, 50.03) },
+                },
+            },
+        },
+    },
 }
 
 -- Ordem das frentes no menu
-Config.DisciplineOrder = { 'electrician' }
+Config.DisciplineOrder = { 'electrician', 'roadwork', 'construction', 'signage', 'streetlight' }
