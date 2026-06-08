@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>vp_cityworks</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <!-- ============================================================
+         3 minigames — feito por LORD32 aka Vini32 e Dooc.
+         Resultado unificado: POST minigameResult { success }.
+    ============================================================= -->
+
+    <!-- ---------- 1) SOLDA (fixStreetLamp / phonePole) ---------- -->
+    <div id="weld" class="mg hidden">
+        <div class="cabinet">
+            <header class="cab-header">
+                <span class="cab-title">SOLDA DE CABOS</span>
+                <div class="cab-meta">
+                    <span id="weld-fails" class="fails"></span>
+                    <span id="weld-timer" class="timer">00:00</span>
+                </div>
+            </header>
+            <p class="cab-hint">Arraste a solda de um terminal ao terminal <b>oposto</b> de cada fio. Sair da trilha = falha.</p>
+            <div id="weld-rows" class="rows"></div>
+            <footer class="cab-footer">
+                <span id="weld-progress" class="progress">0 / 0</span>
+                <span class="esc">ESC para sair</span>
+            </footer>
+        </div>
+        <div id="torch" class="torch hidden"></div>
+    </div>
+
+    <!-- ---------- 2) VOLTIMETRO / PAINEL (fixTrafo / fixHouseBoard) ---------- -->
+    <div id="panel" class="mg hidden">
+        <div class="cabinet">
+            <header class="cab-header">
+                <span class="cab-title">DIAGNOSTICO DE PAINEL</span>
+                <div class="cab-meta">
+                    <span class="volt-label">VOLTIMETRO</span>
+                    <span id="volt-read" class="timer">--- V</span>
+                </div>
+            </header>
+            <p class="cab-hint" id="panel-hint">Passe o <b>voltimetro</b> sobre os paineis e clique no que estiver com voltagem <b>anormal</b>.</p>
+            <div id="panel-grid" class="grid"></div>
+
+            <!-- visao de reparo -->
+            <div id="panel-service" class="service hidden">
+                <p id="service-step" class="service-step"></p>
+                <div id="service-board" class="service-board">
+                    <div id="service-cover" class="service-cover hidden"></div>
+                    <div class="screws">
+                        <div class="screw s1" data-s="1"></div>
+                        <div class="screw s2" data-s="2"></div>
+                        <div class="screw s3" data-s="3"></div>
+                        <div class="screw s4" data-s="4"></div>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="cab-footer">
+                <span id="panel-progress" class="progress"></span>
+                <span class="esc">ESC para sair</span>
+            </footer>
+        </div>
+    </div>
+
+    <!-- ---------- 3) FIACAO / ARRASTAR FIOS (fixTrafficLamp) ---------- -->
+    <div id="wiring" class="mg hidden">
+        <div class="cabinet wiring-cabinet">
+            <header class="cab-header">
+                <span class="cab-title">LIGAR FIACAO</span>
+                <div class="cab-meta">
+                    <span id="wiring-progress" class="timer">0 / 0</span>
+                </div>
+            </header>
+            <p class="cab-hint">Arraste cada fio ao conector da <b>mesma cor</b> do outro lado.</p>
+            <div class="wiring-area">
+                <svg id="wiring-svg" class="wiring-svg"></svg>
+                <div id="plugs" class="wcol left"></div>
+                <div id="sockets" class="wcol right"></div>
+            </div>
+            <footer class="cab-footer">
+                <span class="esc">ESC para sair</span>
+            </footer>
+        </div>
+    </div>
+
+    <!-- ---------- HUD ao vivo (sem foco) ---------- -->
+    <div id="hud" class="hud hidden">
+        <div class="hud-card">
+            <div class="hud-title">SERVIÇO</div>
+            <div id="hud-tasks" class="hud-tasks"></div>
+        </div>
+        <div class="hud-card">
+            <div class="hud-title">EQUIPE</div>
+            <div id="hud-players" class="hud-players"></div>
+        </div>
+    </div>
+
+    <!-- ---------- Tela de recompensa (sem foco, auto-fecha) ---------- -->
+    <div id="reward" class="reward hidden">
+        <div class="reward-card">
+            <div class="reward-badge">⚡</div>
+            <div class="reward-title">MISSÃO CONCLUÍDA</div>
+            <div id="reward-name" class="reward-name"></div>
+            <div class="reward-stats">
+                <div class="reward-stat"><span class="rl">RECOMPENSA</span><span id="reward-money" class="rv">$0</span></div>
+                <div class="reward-stat"><span class="rl">EXP</span><span id="reward-xp" class="rv">0</span></div>
+                <div class="reward-stat"><span class="rl">REPAROS</span><span id="reward-score" class="rv">0</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

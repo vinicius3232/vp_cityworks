@@ -1,0 +1,224 @@
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; user-select: none; }
+
+html, body {
+    width: 100%; height: 100%;
+    background: transparent !important; /* NUI sempre transparente */
+    overflow: hidden;
+}
+.hidden { display: none !important; }
+
+/* ---------------- container generico de minigame ---------------- */
+.mg {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.45);
+}
+
+/* ---------------- gabinete ---------------- */
+.cabinet {
+    width: 46vw;
+    max-width: 760px;
+    background: linear-gradient(160deg, #2b2f36 0%, #1c1f24 100%);
+    border: 2px solid #0c0d10;
+    border-radius: 10px;
+    box-shadow: 0 0 0 6px rgba(0,0,0,.35), 0 24px 60px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.05);
+    padding: 1.4vw 1.6vw;
+    color: #e7e9ec;
+}
+
+.cab-header {
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    padding-bottom: .7vw; margin-bottom: .9vw;
+}
+.cab-title {
+    font-weight: 800; letter-spacing: 2px; font-size: 1.1vw;
+    color: #ffcf24; text-shadow: 0 0 12px rgba(255,207,36,.35);
+}
+.cab-meta { display: flex; align-items: center; gap: 1vw; }
+.volt-label { font-size: .8vw; opacity: .6; letter-spacing: 2px; }
+.fails { font-size: 1vw; letter-spacing: 3px; color: #ff5454; min-width: 4vw; text-align: right; }
+
+.timer {
+    font-variant-numeric: tabular-nums; font-size: 1.3vw; font-weight: 700;
+    background: #0c0d10; padding: .25vw .7vw; border-radius: 6px;
+    border: 1px solid rgba(255,255,255,.08); min-width: 5vw; text-align: center;
+}
+.timer.warn { color: #ff4545; animation: blink .6s steps(2,start) infinite; }
+@keyframes blink { 50% { opacity: .35; } }
+
+.cab-hint { font-size: .8vw; opacity: .7; margin-bottom: 1vw; }
+.cab-hint b { color: #2dff42; }
+
+.cab-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 1.2vw; padding-top: .7vw;
+    border-top: 1px solid rgba(255,255,255,.08); font-size: .85vw;
+}
+.progress { color: #2dff42; font-weight: 700; }
+.esc { opacity: .55; letter-spacing: 1px; }
+
+/* ============================================================
+   1) SOLDA
+============================================================ */
+.rows { display: flex; flex-direction: column; gap: 1.1vw; }
+.wire { position: relative; display: flex; align-items: center; height: 2.4vw; }
+.wire .core {
+    flex: 1; height: .55vw; margin: 0 .2vw; border-radius: 4px;
+    background: var(--dim); transition: background .15s;
+}
+.wire.wired .core { background: var(--bright); box-shadow: 0 0 14px var(--glow); }
+.terminal {
+    width: 2.4vw; height: 2.4vw; border-radius: 6px;
+    background: radial-gradient(circle at 35% 30%, #6a6f78, #2a2d33 70%);
+    border: 2px solid #0c0d10; box-shadow: inset 0 0 6px rgba(0,0,0,.6);
+    cursor: pointer; position: relative;
+}
+.terminal::after {
+    content: ''; position: absolute; inset: 32%; border-radius: 50%;
+    background: var(--bright); opacity: .55;
+}
+.wire.wired .terminal::after { opacity: 1; box-shadow: 0 0 10px var(--glow); }
+.terminal:hover { filter: brightness(1.25); }
+
+.torch {
+    position: fixed; width: 26px; height: 26px; pointer-events: none;
+    transform: translate(-50%, -50%); border-radius: 50%;
+    background: radial-gradient(circle, #fff 0%, #ffd23a 30%, #ff7b00 60%, rgba(255,80,0,0) 75%);
+    box-shadow: 0 0 22px 8px rgba(255,140,0,.7); z-index: 50;
+    animation: flicker .08s infinite alternate;
+}
+@keyframes flicker { from { transform: translate(-50%,-50%) scale(1); } to { transform: translate(-50%,-50%) scale(1.18); } }
+
+/* ============================================================
+   2) VOLTIMETRO / PAINEL
+============================================================ */
+.grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: .8vw;
+}
+.pano {
+    height: 4.2vw; border-radius: 6px;
+    background: linear-gradient(150deg, #3a3f47, #23262b);
+    border: 2px solid #0c0d10; box-shadow: inset 0 0 8px rgba(0,0,0,.5);
+    cursor: crosshair; position: relative; transition: filter .1s, box-shadow .1s;
+}
+.pano::before {
+    content: ''; position: absolute; inset: 22%;
+    border-radius: 4px; background: rgba(0,0,0,.25);
+    border: 1px solid rgba(255,255,255,.06);
+}
+.pano:hover { filter: brightness(1.2); box-shadow: inset 0 0 8px rgba(0,0,0,.5), 0 0 0 2px #ffcf24; }
+.volt-read.low  { color: #ff4545; }
+.volt-read.high { color: #2dff42; }
+
+/* visao de reparo */
+.service { margin-top: 1vw; display: flex; flex-direction: column; align-items: center; }
+.service-step { font-size: .9vw; color: #ffcf24; margin-bottom: .8vw; letter-spacing: 1px; }
+.service-board {
+    width: 16vw; height: 10vw; border-radius: 8px;
+    background: linear-gradient(150deg, #3a3f47, #20242a);
+    border: 2px solid #0c0d10; box-shadow: inset 0 0 14px rgba(0,0,0,.6);
+    position: relative;
+}
+.screws { position: absolute; inset: 0; }
+.screw {
+    position: absolute; width: 1.4vw; height: 1.4vw; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #9aa0a8, #3a3d42 70%);
+    border: 1px solid #0c0d10; cursor: pointer; transition: transform .15s, opacity .15s;
+}
+.screw::after { content: ''; position: absolute; inset: 38%; background: #0c0d10; border-radius: 1px; }
+.screw:hover { transform: scale(1.15); }
+.screw.gone { opacity: 0; pointer-events: none; transform: scale(0.4); }
+.screw.s1 { top: .6vw; left: .6vw; }
+.screw.s2 { top: .6vw; right: .6vw; }
+.screw.s3 { bottom: .6vw; left: .6vw; }
+.screw.s4 { bottom: .6vw; right: .6vw; }
+.service-cover {
+    position: absolute; inset: 2vw; border-radius: 6px; cursor: pointer;
+    background: linear-gradient(160deg, #4a5058, #2a2e34);
+    border: 1px solid rgba(255,255,255,.08);
+    display: flex; align-items: center; justify-content: center;
+    font-size: .8vw; color: #ffcf24; letter-spacing: 1px;
+}
+.service-cover::after { content: 'TROCAR SWITCH'; }
+.service-cover:hover { filter: brightness(1.2); box-shadow: 0 0 0 2px #2dff42; }
+
+/* ============================================================
+   3) FIACAO / ARRASTAR FIOS
+============================================================ */
+.wiring-cabinet { width: 40vw; }
+.wiring-area { position: relative; display: flex; justify-content: space-between; height: 16vw; padding: 0 1vw; }
+.wiring-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+.wcol { display: flex; flex-direction: column; justify-content: space-around; z-index: 2; }
+.node {
+    width: 2.2vw; height: 2.2vw; border-radius: 50%;
+    border: 3px solid #0c0d10; box-shadow: inset 0 0 6px rgba(0,0,0,.6);
+    position: relative; background: var(--c);
+}
+.plug { cursor: grab; }
+.plug:active { cursor: grabbing; }
+.plug.done, .socket.done { box-shadow: 0 0 14px var(--c); }
+.node.dim { filter: grayscale(.4) brightness(.7); }
+.socket::after {
+    content: ''; position: absolute; inset: 30%; border-radius: 50%;
+    background: #0c0d10;
+}
+.socket.done::after { background: var(--c); }
+
+/* ============================================================
+   HUD ao vivo (canto superior direito, sem foco)
+============================================================ */
+.hud {
+    position: absolute; top: 2vh; right: 1.5vw;
+    display: flex; flex-direction: column; gap: .8vh;
+    width: 15vw; pointer-events: none;
+}
+.hud-card {
+    background: linear-gradient(160deg, rgba(43,47,54,.92), rgba(20,23,27,.92));
+    border: 1px solid #0c0d10; border-left: 3px solid #ffcf24;
+    border-radius: 8px; padding: .7vw .8vw;
+    box-shadow: 0 8px 24px rgba(0,0,0,.5);
+}
+.hud-title {
+    font-size: .75vw; letter-spacing: 2px; color: #ffcf24; font-weight: 800;
+    margin-bottom: .5vw; opacity: .9;
+}
+.hud-tasks, .hud-players { display: flex; flex-direction: column; gap: .35vw; }
+.hud-row { display: flex; align-items: center; justify-content: space-between; font-size: .8vw; color: #e7e9ec; }
+.hud-row .lbl { opacity: .85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 10vw; }
+.hud-row .val { font-weight: 700; font-variant-numeric: tabular-nums; }
+.hud-row.done .lbl { opacity: .5; text-decoration: line-through; }
+.hud-row.done .val { color: #2dff42; }
+.hud-bar { height: .3vw; border-radius: 3px; background: rgba(255,255,255,.1); margin-top: .15vw; overflow: hidden; }
+.hud-bar > div { height: 100%; background: #2dff42; width: 0; transition: width .3s; }
+
+/* ============================================================
+   Tela de recompensa (centro, auto-fecha)
+============================================================ */
+.reward {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,.5); pointer-events: none;
+}
+.reward-card {
+    width: 26vw; text-align: center; padding: 2vw;
+    background: linear-gradient(160deg, #2b2f36, #16191d);
+    border: 1px solid #0c0d10; border-radius: 14px;
+    box-shadow: 0 0 0 6px rgba(0,0,0,.35), 0 24px 60px rgba(0,0,0,.7);
+    animation: rewardIn .5s cubic-bezier(.2,.9,.3,1.2);
+}
+@keyframes rewardIn { from { transform: scale(.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.reward-badge {
+    width: 3.4vw; height: 3.4vw; margin: 0 auto .8vw; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-size: 1.8vw;
+    background: radial-gradient(circle, #ffcf24, #a37a00);
+    box-shadow: 0 0 24px rgba(255,207,36,.6);
+}
+.reward-title { font-size: 1.3vw; font-weight: 800; letter-spacing: 2px; color: #2dff42; }
+.reward-name { font-size: .95vw; opacity: .8; color: #e7e9ec; margin-top: .3vw; }
+.reward-stats { display: flex; justify-content: space-around; margin-top: 1.4vw; }
+.reward-stat { display: flex; flex-direction: column; gap: .3vw; }
+.reward-stat .rl { font-size: .7vw; letter-spacing: 1px; opacity: .6; color: #e7e9ec; }
+.reward-stat .rv { font-size: 1.2vw; font-weight: 800; color: #ffcf24; }

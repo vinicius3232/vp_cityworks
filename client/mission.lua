@@ -1,0 +1,274 @@
+-- client/mission.lua :: gameplay da missao (blips, markers, fumaca, alvos, entrega)
+
+JobActive       = false
+CurrentMission  = nil   -- { targets = {...}, progress = {...} }
+MissionRegion   = nil
+MissionVehicles = {}
+ActiveDiscipline = nil  -- config da frente ativa (Config.Disciplines[id])
+
+local missionBlips = {}
+local smokeFx = {}      -- [targetId] = ptfxHandle
+local deliveryBlip = nil
+local vehicleBlips = {} -- blips que seguem os veiculos do job
+
+---------------------------------------------------------------------
+-- HELPERS
+---------------------------------------------------------------------
+local function addBlip(coords, label, sprite, color)
+    local blip = AddBlipForCoord(coords.x, coords.y, coords.z)
+    SetBlipSprite(blip, sprite or 354)
+    SetBlipColour(blip, color or 5)
+    SetBlipScale(blip, 0.8)
+    SetBlipAsShortRange(blip, true)
+    BeginTextCommandSetBlipName('STRING')
+    AddTextComponentSubstringPlayerName(label or 'Reparo')
+    EndTextCommandSetBlipName(blip)
+    return blip
+end
+
+local function startSmoke(targetId, coords)
+    if smokeFx[targetId] then return end
+    lib.requestNamedPtfxAsset('core')
+    UseParticleFxAssetNextCall('core')
+    local fx = StartParticleFxLoopedAtCoord('ent_dst_elec_fire_sp',
+        coords.x, coords.y, coords.z, 0.0, 0.0, 0.0, 1.0, false, false, false, false)
+    smokeFx[targetId] = fx
+end
+
+local function stopSmoke(targetId)
+    if smokeFx[targetId] then
+        StopParticleFxLooped(smokeFx[targetId], 0)
+        smokeFx[targetId] = nil
+    end
+end
+
+--- Cria um blip por veiculo do job e o mantem seguindo o carro.
+function StartVehicleBlips()
+    for _, netId in ipairs(MissionVehicles) do
+        local blip = AddBlipForCoord(0.0, 0.0, 0.0)
+        SetBlipSprite(blip, 85)
+        SetBlipColour(blip, 5)
+        SetBlipScale(blip, 0.8)
+        SetBlipAsShortRange(blip, true)
+        BeginTextCommandSetBlipName('STRING')
+        AddTextComponentSubstringPlayerName('Caminhao - ' .. ((ActiveDiscipline and ActiveDiscipline.label) or 'Obras'))
+        EndTextCommandSetBlipName(blip)
+        vehicleBlips[#vehicleBlips + 1] = { blip = blip, netId = netId }
+    end
+    CreateThread(function()
+        while JobActive and #vehicleBlips > 0 do
+            for _, vb in ipairs(vehicleBlips) do
+                local veh = NetworkGetEntityFromNetworkId(vb.netId)
+                if veh and veh ~= 0 and DoesEntityExist(veh) then
+                    local c = GetEntityCoords(veh)
+                    SetBlipCoords(vb.blip, c.x, c.y, c.z)
+                end
+            end
+            Wait(1500)
+        end
+    end)
+end
+
+local function clearMission()
+    JobActive = false
+    for _, blip in pairs(missionBlips) do RemoveBlip(blip) end
+    missionBlips = {}
+    for _, vb in ipairs(vehicleBlips) do RemoveBlip(vb.blip) end
+    vehicleBlips = {}
+    for id in pairs(smokeFx) do stopSmoke(id) end
+    if deliveryBlip then RemoveBlip(deliveryBlip); deliveryBlip = nil end
+    ClearEquipment() -- equipment.lua
+    SendNUIMessage({ action = 'HUD_HIDE' })
+    CurrentMission = nil
+    MissionRegion = nil
+    MissionVehicles = {}
+    ActiveDiscipline = nil
+end
+
+---------------------------------------------------------------------
+-- EVENTOS
+---------------------------------------------------------------------
+RegisterNetEvent('vp_cityworks:jobStarted', function(data)
+    JobActive = true
+    CurrentMission = data.mission
+    MissionRegion = data.region
+    MissionVehicles = data.vehicles or {}
+    ActiveDiscipline = Config.Disciplines[data.disciplineId] or Utils.discipline()
+
+    for id, target in pairs(CurrentMission.targets) do
+        missionBlips[id] = addBlip(target.coords, ActiveDiscipline.taskLabels[target.type] or target.type, 354, 5)
+    end
+    -- blip(s) seguindo o(s) veiculo(s) do job
+    StartVehicleBlips()
+    -- HUD ao vivo
+    SendNUIMessage({ action = 'HUD_SHOW', tasks = data.progress, players = data.players })
+    lib.notify({ description = MissionRegion.title, type = 'inform' })
+end)
+
+RegisterNetEvent('vp_cityworks:targetUpdated', function(targetId, fixed, progress)
+    if not CurrentMission then return end
+    local target = CurrentMission.targets[targetId]
+    if not target then return end
+    if fixed then
+        target.fixed = true
+        if missionBlips[targetId] then RemoveBlip(missionBlips[targetId]); missionBlips[targetId] = nil end
+        stopSmoke(targetId)
+        if progress then
+            CurrentMission.progress = progress
+            SendNUIMessage({ action = 'HUD_TASKS', tasks = progress })
+        end
+    end
+end)
+
+RegisterNetEvent('vp_cityworks:refreshScore', function(players)
+    SendNUIMessage({ action = 'HUD_PLAYERS', players = players })
+end)
+
+RegisterNetEvent('vp_cityworks:jobComplete', function(deliveryCoords)
+    lib.notify({ description = locale('job_complete'), type = 'success' })
+    if deliveryBlip then RemoveBlip(deliveryBlip) end
+    deliveryBlip = addBlip(deliveryCoords, locale('deliver_vehicle'), 1, 29)
+    SetNewWaypoint(deliveryCoords.x, deliveryCoords.y)
+    CurrentMission.deliveryCoords = deliveryCoords
+    CurrentMission.finished = true
+end)
+
+RegisterNetEvent('vp_cityworks:jobReset', function()
+    clearMission()
+    lib.notify({ description = locale('reset_job'), type = 'inform' })
+end)
+
+---------------------------------------------------------------------
+-- LOOP DE INTERACAO COM ALVOS
+---------------------------------------------------------------------
+CreateThread(function()
+    while true do
+        local sleep = 1000
+        if JobActive and CurrentMission and not CurrentMission.finished then
+            local pc = GetEntityCoords(cache.ped)
+            for id, target in pairs(CurrentMission.targets) do
+                if not target.fixed then
+                    local dist = #(pc - target.coords)
+                    local radius = (ActiveDiscipline and ActiveDiscipline.targetRadius[target.type]) or 3.0
+                    if dist < 20.0 then
+                        sleep = 0
+                        startSmoke(id, target.coords)
+                        DrawMarker(2, target.coords.x, target.coords.y, target.coords.z + 1.0,
+                            0,0,0, 0,0,0, 0.5,0.5,0.5, 0,255,0,180, false,false,2,nil,nil,false)
+                        if dist < radius then
+                            local req = ActiveDiscipline and ActiveDiscipline.requiresEquipment[target.type]
+                            if req and not target.equipped then
+                                -- precisa de escada/lift: delega ao equipment.lua
+                                HandleEquipmentPrompt(target, req)
+                            else
+                                local label = (ActiveDiscipline and ActiveDiscipline.taskLabels[target.type]) or target.type
+                                DrawText3D(target.coords, ('[E] %s'):format(label))
+                                if IsControlJustReleased(0, 38) then
+                                    TryOpenTarget(target)
+                                end
+                            end
+                        end
+                    else
+                        stopSmoke(id)
+                    end
+                end
+            end
+        end
+        Wait(sleep)
+    end
+end)
+
+function TryOpenTarget(target)
+    local res = lib.callback.await('vp_cityworks:openTarget', false, { targetId = target.id })
+    if not res then
+        lib.notify({ description = locale('target_busy'), type = 'error' })
+        return
+    end
+    if res.needEquipment then
+        local key = res.needEquipment == 'ladder' and 'need_ladder' or 'need_lift'
+        lib.notify({ description = locale(key), type = 'error' })
+        return
+    end
+    -- roda o minigame (minigames.lua) e envia resultado ao server
+    StartMinigame(target.type, function(success)
+        if not success then
+            ApplyShockDamage() -- minigames.lua
+        end
+        TriggerServerEvent('vp_cityworks:completeTarget', target.id, success)
+    end)
+end
+
+---------------------------------------------------------------------
+-- ENTREGA DO VEICULO
+---------------------------------------------------------------------
+CreateThread(function()
+    while true do
+        local sleep = 1000
+        if JobActive and CurrentMission and CurrentMission.finished and CurrentMission.deliveryCoords then
+            local ped = cache.ped
+            if IsPedInAnyVehicle(ped, false) then
+                local dc = CurrentMission.deliveryCoords
+                local dist = #(GetEntityCoords(ped) - dc)
+                if dist < 25.0 then
+                    sleep = 0
+                    DrawMarker(2, dc.x, dc.y, dc.z + 1.0, 0,0,0, 0,0,0, 0.6,0.6,0.6, 255,255,0,180, false,false,2,nil,nil,false)
+                    if dist < ((ActiveDiscipline and ActiveDiscipline.targetRadius.delivery) or 10.0) then
+                        DrawText3D(dc, locale('deliver_vehicle'))
+                        if IsControlJustReleased(0, 38) then
+                            TriggerServerEvent('vp_cityworks:deliverVehicle')
+                            Wait(2000)
+                        end
+                    end
+                end
+            end
+        end
+        Wait(sleep)
+    end
+end)
+
+---------------------------------------------------------------------
+-- SEMAFORO PISCANDO (fixTrafficLamp defeituoso)
+---------------------------------------------------------------------
+CreateThread(function()
+    while true do
+        local sleep = 1500
+        if JobActive and CurrentMission then
+            local pc = GetEntityCoords(cache.ped)
+            local models = ActiveDiscipline and ActiveDiscipline.trafficLightModels
+            if models then
+                for id, target in pairs(CurrentMission.targets) do
+                    if target.type == 'fixTrafficLamp' and not target.fixed and #(pc - target.coords) < 30.0 then
+                        sleep = 250
+                        for _, model in ipairs(models) do
+                            local light = GetClosestObjectOfType(target.coords.x, target.coords.y, target.coords.z, 8.0, model, false, false, false)
+                            if light ~= 0 then
+                                SetEntityTrafficlightOverride(light, math.random(0, 2))
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        Wait(sleep)
+    end
+end)
+
+---------------------------------------------------------------------
+-- DrawText3D util
+---------------------------------------------------------------------
+function DrawText3D(coords, text)
+    SetDrawOrigin(coords.x, coords.y, coords.z + 1.0, 0)
+    SetTextScale(0.35, 0.35)
+    SetTextFont(4)
+    SetTextProportional(1)
+    SetTextColour(255, 255, 255, 215)
+    SetTextEntry('STRING')
+    SetTextCentre(true)
+    AddTextComponentString(text)
+    DrawText(0.0, 0.0)
+    ClearDrawOrigin()
+end
+
+AddEventHandler('onResourceStop', function(res)
+    if res == GetCurrentResourceName() then clearMission() end
+end)
