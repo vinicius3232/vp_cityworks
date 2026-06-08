@@ -32,6 +32,7 @@ client_scripts {
     'client/equipment.lua',
     'client/minigames.lua',
     'client/towing.lua',
+    'client/dispatch.lua',
 }
 
 server_scripts {
@@ -41,6 +42,7 @@ server_scripts {
     'server/main.lua',
     'server/missions.lua',
     'server/towing.lua',
+    'server/dispatch.lua',
     'server/rewards.lua',
 }
 

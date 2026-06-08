@@ -53,6 +53,17 @@ Config.RewardItems    = {
 }
 Config.BossRewardSplit = true
 
+-- Dispatch sob demanda: cidadao chama um servico; equipes EM SERVICO daquela
+-- frente recebem um chamado (blip + notify) no local do cidadao.
+Config.Dispatch = {
+    enable      = true,
+    command     = 'pedirservico',
+    fee         = 200,           -- cobrado do cidadao
+    account     = 'bank',
+    blipTime    = 180000,        -- ms que o blip do chamado dura
+    disciplines = { 'towing', 'electrician' }, -- frentes que aceitam chamado
+}
+
 ---------------------------------------------------------------------
 -- EQUIPAMENTO (props sincronizados — usado por frentes que precisarem)
 ---------------------------------------------------------------------
