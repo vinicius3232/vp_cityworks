@@ -207,7 +207,8 @@ end)
 CreateThread(function()
     while true do
         local sleep = 1000
-        if JobActive and CurrentMission and not CurrentMission.finished then
+        if JobActive and CurrentMission and not CurrentMission.finished
+            and not (ActiveDiscipline and ActiveDiscipline.kind == 'towing') then
             local pc = GetEntityCoords(cache.ped)
             for id, target in pairs(CurrentMission.targets) do
                 if not target.fixed then

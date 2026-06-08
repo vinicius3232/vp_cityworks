@@ -69,6 +69,15 @@ local function destroyLobby(ownerCid)
         local veh = NetworkGetEntityFromNetworkId(netId)
         if veh and veh ~= 0 and DoesEntityExist(veh) then DeleteEntity(veh) end
     end
+    -- guincho: limpa veiculos quebrados ainda spawnados
+    if lobby.mission and lobby.mission.targets then
+        for _, t in pairs(lobby.mission.targets) do
+            if t.vehicleNetId then
+                local bveh = NetworkGetEntityFromNetworkId(t.vehicleNetId)
+                if bveh and bveh ~= 0 and DoesEntityExist(bveh) then DeleteEntity(bveh) end
+            end
+        end
+    end
     for cid in pairs(lobby.players) do
         PlayerLobby[cid] = nil
     end
@@ -241,6 +250,23 @@ end)
 local function generateMission(disc, region)
     local mission = { targets = {}, progress = {}, remaining = 0 }
     local nextId = 0
+
+    -- GUINCHO: alvos sao veiculos a rebocar (modo 'tow')
+    if disc.kind == 'towing' then
+        local picked = Utils.pickRandom(disc.variants, region.towCount or 3)
+        mission.progress['tow'] = { count = #picked, made = 0, label = disc.taskLabels.tow or 'Reboque' }
+        for _, v in ipairs(picked) do
+            nextId = nextId + 1
+            mission.targets[nextId] = {
+                id = nextId, type = 'tow', mode = 'tow',
+                coords = vec3(v.coords.x, v.coords.y, v.coords.z),
+                variant = v, vehicleNetId = nil, loaded = false, fixed = false,
+            }
+            mission.remaining = mission.remaining + 1
+        end
+        return mission
+    end
+
     for _, task in ipairs(region.jobTasks) do
         local pool = region.pools[task.name] or {}
         local picked = Utils.pickRandom(pool, task.count)
@@ -342,6 +368,19 @@ RegisterNetEvent('vp_cityworks:startJob', function()
     end
     spawnVeh(disc.vehicle.primary, sp[1])
     if count > 2 and sp[2] then spawnVeh(disc.vehicle.secondary, sp[2]) end
+
+    -- GUINCHO: spawna os veiculos quebrados a rebocar
+    if disc.kind == 'towing' then
+        for _, t in pairs(lobby.mission.targets) do
+            local v = t.variant
+            local bveh = CreateVehicleServerSetter(v.model, 'automobile', v.coords.x, v.coords.y, v.coords.z, v.coords.w)
+            local tt = 0
+            while not DoesEntityExist(bveh) and tt < 100 do Wait(10); tt = tt + 1 end
+            if DoesEntityExist(bveh) then
+                t.vehicleNetId = NetworkGetNetworkIdFromEntity(bveh)
+            end
+        end
+    end
 
     broadcast(lobby, 'vp_cityworks:jobStarted', {
         disciplineId = lobby.disciplineId,

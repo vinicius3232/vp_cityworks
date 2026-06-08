@@ -363,7 +363,45 @@ Config.Disciplines = {
             },
         },
     },
+
+    -----------------------------------------------------------------
+    -- GUINCHO / REBOQUE (kind = 'towing' — fluxo proprio)
+    -- Reimplementado do zero (inspirado no 0r-towtruck, open source).
+    -----------------------------------------------------------------
+    towing = {
+        id = 'towing', label = 'Guincho', icon = 'truck-pickup', minLevel = 0,
+        kind = 'towing', -- ativa o motor de reboque (client/server towing.lua)
+        vehicle = { primary = `flatbed`, secondary = `flatbed`, fuel = 100.0 },
+        taskLabels = { tow = 'Rebocar Veiculo' },
+        targetRadius = { delivery = 12.0 },
+        loadDistance = 8.0,       -- distancia (flatbed<->veiculo) p/ carregar
+        attachOffset = { x = 0.0, y = -2.6, z = 1.0 }, -- posicao do veiculo no flatbed
+        -- pontos de entrega dos veiculos rebocados
+        deliveryPoints = {
+            vec3(-217.97, 6253.78, 30.49),
+            vec3(2414.78, 3100.86, 46.53),
+            vec3(421.17, -1635.85, 27.66),
+        },
+        -- pool de veiculos quebrados (sorteados por servico)
+        variants = {
+            { model = `baller`,    coords = vec4(1332.75, 602.34, 79.16, 324.17),  reason = 'Falha no motor' },
+            { model = `prairie`,   coords = vec4(-1467.01, -880.62, 9.16, 71.59),  reason = 'Pneu furado' },
+            { model = `tailgater`, coords = vec4(11.39, -152.17, 54.44, 252.64),   reason = 'Mal estacionado' },
+            { model = `kuruma`,    coords = vec4(2396.71, 5192.42, 51.21, 359.28), reason = 'Falha no motor' },
+            { model = `futo`,      coords = vec4(-693.47, -646.7, 29.47, 87.89),   reason = 'Sem combustivel' },
+            { model = `sultan`,    coords = vec4(-1070.57, -1422.62, 3.72, 166.36),reason = 'Mal estacionado' },
+        },
+        regions = {
+            {
+                key = 1, title = 'Guincho - Los Santos', minLevel = 0, maxPlayers = 4,
+                awards = { money = 8000, xp = 1400, coopMultiplier = 1.5 },
+                spawnCoords = { vec4(409.64, -1652.71, 28.38, 319.72), vec4(405.24, -1648.4, 28.38, 320.08) },
+                deliveryCoords = vec3(409.64, -1652.71, 28.38), -- depot p/ devolver o flatbed
+                towCount = 3, -- quantos veiculos rebocar no servico
+            },
+        },
+    },
 }
 
 -- Ordem das frentes no menu
-Config.DisciplineOrder = { 'electrician', 'roadwork', 'construction', 'signage', 'streetlight' }
+Config.DisciplineOrder = { 'electrician', 'roadwork', 'construction', 'signage', 'streetlight', 'towing' }

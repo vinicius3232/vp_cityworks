@@ -31,6 +31,7 @@ local function completeTargetInternal(lobby, target, cid, src)
         vpBroadcast(lobby, 'vp_cityworks:jobComplete', lobby.region.deliveryCoords)
     end
 end
+_G.vpCompleteTarget = completeTargetInternal -- usado pelo motor de guincho
 
 ---------------------------------------------------------------------
 -- COMPLETAR UM ALVO
