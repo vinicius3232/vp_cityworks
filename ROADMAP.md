@@ -9,7 +9,7 @@ Plano completo das ideias discutidas. Cada fase é um commit no repo.
 - Extras 17mov: 2 papéis (desligar tensão), cloakroom, seta vermelha.
 - 3 minigames NUI (solda, painel/voltímetro, fiação). Lift móvel + escada.
 
-## 🔧 Fase 2 — Modos de tarefa (motor)
+## ✅ Fase 2 — Modos de tarefa (motor) (feito)
 Generalizar a interação por `mode` por tarefa (`discipline.taskMode[task]`):
 - `minigame` (atual) — abrir → minigame → concluir.
 - `drill` — alvo com VIDA; bater N vezes (progressbar por batida), sincronizado.
@@ -18,25 +18,25 @@ Generalizar a interação por `mode` por tarefa (`discipline.taskMode[task]`):
 - `vehicle` (guincho) — frente especial: alvo é um VEÍCULO (spawn) → prender (flatbed/corda)
   → entregar. Fluxo próprio (towing).
 
-## 🛣️ Fase 3 — Frentes novas (config + modos)
+## ✅ Fase 3 — Frentes novas (feito)
 - **Asfalto / Vias** (`drill`): tapar buraco / remover bloqueio com britadeira.
 - **Construção / Obra** (`build`): montar andaime/estrutura (progress + props).
 - **Sinalização** (`build`/minigame): instalar placa / repintar faixa.
 - **Iluminação pública** (`minigame`): trocar lâmpada (variação do eletricista, sem lift).
 
-## 🚛 Fase 4 — Frente Guincho (modo `vehicle`)
+## ✅ Fase 4 — Frente Guincho (feito)
 Inspiração: 0r-towtruck (open source, 0resmon) — reimplementado do zero, creditado.
 - Alvo = veículo quebrado (pool com motivo/dano). Spawn → blip → prender no flatbed
   (`AttachEntityToEntity` no bone bodyshell, posição por modelo) ou corda/gancho
   (`AddRope`) → blip de entrega → entregar → pagar + XP.
 - Veículo do job = flatbed; bed sobe/desce.
 
-## 📞 Fase 5 — Dispatch sob demanda (transversal)
+## ✅ Fase 5 — Dispatch sob demanda (feito)
 - Cidadão (jogador) chama um serviço (guincho/eletricista) com `/pedirservico`.
 - Equipes em serviço daquela frente recebem o chamado e podem aceitar.
 - Taxa do chamado cobrada do cidadão.
 
-## 📚 Fase 6 — Fechamento
+## ✅ Fase 6 — Fechamento (feito)
 - DOCUMENTATION atualizada, precheck, commit/push final.
 
 ## Notas

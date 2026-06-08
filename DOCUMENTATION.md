@@ -1,6 +1,6 @@
 # vp_cityworks — Documentação Técnica
 
-Job cooperativo de eletricista por região para **QBox**, nativo em ox_lib / ox_inventory / ox_target.
+**Secretaria de Obras (SADOT)** — empresa de manutenção da cidade para **QBox**, nativa em ox_lib / ox_inventory / ox_target. Várias **frentes de trabalho** cooperativas sob a mesma central, motor genérico por disciplina.
 
 > Script feito por **LORD32 aka Vini32 e Dooc**
 
@@ -10,13 +10,13 @@ Job cooperativo de eletricista por região para **QBox**, nativo em ox_lib / ox_
 
 | Resource | Versão | Uso |
 |----------|--------|-----|
-| qbx_core | 1.23.0 | `GetPlayer`, `AddMoney`, `Notify`, `GetPlayerData` |
-| ox_lib | 3.32.2 | callbacks, context menu, dialogs, skillCheck, notify, cache, points |
-| ox_inventory | 2.44.8 | (hook pronto p/ itens; não exige itens hoje) |
+| qbx_core | 1.23.0 | `GetPlayer`, `AddMoney`/`RemoveMoney`, `Notify`, `GetPlayerData` |
+| ox_lib | 3.32.2 | callbacks, context menu, dialogs, skillCheck, progressBar, notify, cache |
+| ox_inventory | 2.44.8 | item obrigatório, itens de recompensa (`GetItemCount`/`AddItem`/`RemoveItem`) |
 | ox_target | — | interação no NPC |
 | ox_fuel | — | combustível via statebag `Entity(veh).state:set('fuel', x, true)` |
 | qbx_vehiclekeys | — | `GiveKeys(src, veh, skipNotif)` |
-| oxmysql | — | persistência (`?` sempre) |
+| oxmysql | — | persistência (sempre `?`) |
 
 OneSync `on`, Entity Lockdown `relaxed` (compatível com `CreateVehicleServerSetter`).
 
@@ -24,179 +24,164 @@ OneSync `on`, Entity Lockdown `relaxed` (compatível com `CreateVehicleServerSet
 
 ## 2. Instalação
 
-1. Importe `sql/migration.sql`.
+1. Importe `sql/migration.sql` (tabela `vp_cityworks`).
 2. O grupo `[standalone]` já é `ensure`d no `server.cfg` — **não duplique**. Para forçar: `ensure vp_cityworks`.
-3. (Opcional) log Discord sem token hardcoded:
-   ```cfg
-   set vp_cityworks_webhook "https://discord.com/api/webhooks/..."
-   ```
-4. (Opcional) locale pt-BR: `setr ox:locale pt-br`.
+3. ⚠️ **Desabilite o `vp_electrician` antigo** (este resource o substitui).
+4. (Opcional) log Discord via convar (sem token no código):
+   `set vp_cityworks_webhook "https://discord.com/api/webhooks/..."`
+5. (Opcional) locale pt-BR: `setr ox:locale pt-br`.
 
 ---
 
-## 3. Gameplay (fluxo completo)
+## 3. Frentes de trabalho (`Config.Disciplines`)
 
-```
-NPC (ox_target) → menu → cria lobby → [convida ≤4] → escolhe região →
-INICIAR → caminhão spawna (chave+fuel) → blips dos alvos →
-dirige até cada alvo → minigame (3 tipos) →
-  · poste de luz / poste telefônico exigem ESCADA / LIFT antes →
-todos OK → blip de entrega + waypoint → devolve veículo →
-recompensa ($ dividido + XP, persiste) → fim
-```
+O jogador interage no NPC → escolhe a **frente** → escolhe a **região/contrato** → inicia. Cada frente tem veículo, rótulos, regiões e modo de tarefa próprios.
 
-**5 tipos de tarefa:**
+| Frente (`id`) | Tarefas | Modo | Destaque |
+|---------------|---------|------|----------|
+| ⚡ `electrician` | trafo, quadro, poste de luz, poste telefônico, semáforo | minigame | escada/lift, 2 papéis (desligar tensão) |
+| 🛣️ `roadwork` | buraco, bloqueio | drill | alvo com vida (britadeira) |
+| 🏗️ `construction` | andaime, muro | build | progressbar + props |
+| 🪧 `signage` | placa, faixa | build + minigame | instalar/pintar |
+| 💡 `streetlight` | lâmpada | minigame | sem lift |
+| 🚛 `towing` | rebocar veículo | tow | flatbed (`kind='towing'`) |
 
-| Tarefa | Local | Equipamento | Minigame |
-|--------|-------|-------------|----------|
-| `fixTrafo` | transformador de rua | — | Painel/voltímetro |
-| `fixHouseBoard` | quadro de luz | — | Painel/voltímetro |
-| `fixStreetLamp` | poste de luz (alto) | **escada** | Solda |
-| `phonePole` | poste telefônico (alto) | **lift** | Solda |
-| `fixTrafficLamp` | semáforo (pisca cor) | — | Fiação |
-
-**Coop:** recompensa `base × coopMultiplier × nº players`, dividida no fim. Trava de concorrência por alvo (um por vez). Dono cai → missão encerra para todos.
+`Config.DisciplineOrder` define a ordem no menu. Cada frente tem `minLevel` (gate de nível, validado no servidor).
 
 ---
 
-## 4. Os 3 minigames (NUI custom — `html/`)
+## 4. Modos de tarefa (`discipline.taskMode[task]`)
 
-Todos reescritos do zero. Visual em CSS, **áudio sintetizado via WebAudio** (sem arquivos de som proprietários). Resultado unificado: `POST minigameResult { success }`.
+O motor é genérico; cada tarefa tem um modo:
 
-### 5.1 Solda (`welding`) — poste de luz / telefônico
-- Arrastar a "solda" de um terminal ao **terminal oposto** do mesmo fio.
-- Timer regressivo + limite de tentativas (`maxFails`); sair da trilha = falha.
-- Vitória: todos os fios soldados. Derrota: tempo ou tentativas esgotadas.
+- **`minigame`** — abrir alvo (lock) → minigame → concluir. Pode exigir equipamento (`requiresEquipment`) e/ou desligar tensão (`needsPower`).
+- **`drill`** — alvo com **vida** (`disc.drill[task].health`); cada batida (`hitTarget`, progressbar) decrementa, sincronizado (`targetHit`); conclui em 0.
+- **`build`** — progressbar (`disc.build[task].time`) → conclui → **spawna prop** (`disc.build[task].prop`) sincronizado via `targetUpdated`.
+- **`tow`** — frente `kind='towing'`: alvo é um **veículo**; carregar no flatbed → entregar (ver §6).
 
-### 5.2 Painel/Voltímetro (`panel`) — transformador / quadro
-- Passar o voltímetro sobre N painéis → o defeituoso lê voltagem **baixa**; os demais ~220 V.
-- Clicar no defeituoso → remover 4 parafusos → trocar switch → reapertar 4 → sucesso.
-- Clicar no painel **errado** = falha (choque).
-
-### 5.3 Fiação (`wiring`) — semáforo
-- Arrastar cada fio ao conector da **mesma cor** (embaralhados); linhas SVG ao vivo.
-- Todos conectados = sucesso.
-
-**Seleção por tarefa:** `Config.Minigames.byTask`. Fallback `skillcheck` (ox_lib) disponível.
-**Falha** dispara `ApplyShockDamage()` (anim `electrocute` + `-10..25 HP`).
+Falha de minigame → `ApplyShockDamage` (`-10..25 HP`). Conclusão centralizada em `completeTargetInternal` (exposta como `vpCompleteTarget`).
 
 ---
 
-## 5. Arquitetura (server-authoritative)
+## 5. Os 3 minigames (NUI custom — `html/`)
 
-O servidor é a única fonte de verdade. **Nunca confia** em `owneridentifier`/`coords` do client.
+Reescritos do zero. Visual CSS, **áudio sintetizado (WebAudio)**, sem assets proprietários. Resultado unificado: `POST minigameResult { success }`.
 
-- `Lobbies[ownerCid]` = estado completo (players, região, missão, veículos).
-- `PlayerLobby[citizenid]` = lookup reverso → o lobby é **derivado do `src`**, não enviado pelo client.
-- Cada conserto revalida: lobby existe? job começou? alvo aberto **por este player**? **proximity server-side**? cooldown? **tempo mínimo desde a abertura** (anti-skip de minigame, `Config.Minigames.minSeconds`)?
-- **Gate de nível validado no servidor** (`selectMission`/`startJob`), não só no menu.
-- Recompensa só é paga após o servidor confirmar veículo no ponto de entrega (anti pagamento-duplo via `lobby.paid`).
+- **Solda** (`welding`) — arrastar a solda de um terminal ao **oposto**; timer + tentativas.
+- **Painel/Voltímetro** (`panel`) — achar o painel de voltagem **anormal** → parafusos → switch → reapertar.
+- **Fiação** (`wiring`) — arrastar cada fio ao conector da **mesma cor** (linhas SVG).
 
-### Contrato de eventos/callbacks (nossos)
-
-**Callbacks (ox_lib):**
-| Nome | Função |
-|------|--------|
-| `vp_cityworks:getProfile` | perfil + lobby + regiões |
-| `vp_cityworks:openTarget` | trava de concorrência + proximity + checa equipamento |
-
-**Eventos servidor:**
-`invite`, `acceptInvite`, `kickPlayer`, `selectMission`, `startJob`, `resetJob`, `completeTarget`, `closeTarget`, `buildEquipment`, `removeEquipment`, `deliverVehicle`.
-
-**Eventos cliente:**
-`receiveInvite`, `refreshLobby`, `leftLobby`, `jobStarted`, `targetUpdated`, `refreshScore`, `jobComplete`, `jobReset`, `rewardScreen`, `equipmentBuilt`, `equipmentRemoved`.
-
-**NUI:** actions `START_WELD` / `START_PANEL` / `START_WIRING` / `CLOSE`; callback `minigameResult`.
+Seleção por tarefa: `discipline.minigames.byTask`. Fallback `skillcheck` (ox_lib).
 
 ---
 
-## 6. Referência de configuração (`config/config.lua`)
+## 6. Guincho (`kind='towing'`)
 
+Reimplementado do zero (inspirado no 0r-towtruck, open source).
+
+- `generateMission` sorteia `region.towCount` veículos de `disc.variants` (modelo + coords + motivo).
+- `startJob` spawna o(s) flatbed(s) **e** os veículos quebrados (server-side).
+- **Carregar** (`loadVehicle`): perto do veículo com um flatbed por perto → `AttachEntityToEntity` no bone do leito (`disc.attachOffset`).
+- **Entregar** (`deliverTow`): num `disc.deliveryPoints` → deleta o veículo, paga via `vpCompleteTarget`.
+- Concluídos todos → devolver o flatbed no depot (`region.deliveryCoords`) → pagamento.
+
+⚠️ O attach do flatbed precisa de ajuste fino in-game (offset por modelo).
+
+---
+
+## 7. Dispatch sob demanda (`Config.Dispatch`)
+
+- Cidadão usa `/pedirservico` → escolhe a frente (em `Config.Dispatch.disciplines`) → paga taxa.
+- Todas as **equipes em serviço** daquela frente recebem **blip (com rota) + notify** no local do cidadão.
+- O atendimento/recompensa é RP (a equipe vai até lá). Server valida fundos e existência de equipe.
+
+---
+
+## 8. Arquitetura (server-authoritative)
+
+O servidor é a única fonte de verdade. **Nunca confia** em coords/identificadores do client.
+
+- `Lobbies[ownerCid]` = estado completo (players, `disciplineId`, região, missão, veículos).
+- `PlayerLobby[citizenid]` = lookup reverso → o lobby é **derivado do `src`**.
+- Cada conclusão revalida: lobby existe? job começou? alvo aberto **por este player**? **proximity server-side**? cooldown? **tempo mínimo** (anti-skip, `Config.Minigames.minSeconds`)?
+- **Gate de nível** validado no servidor (`selectDiscipline`/`selectMission`/`startJob`).
+- Recompensa só após o servidor confirmar o veículo no ponto de entrega (anti pagamento-duplo, `lobby.paid`).
+- **Hardening**: todo `RegisterNetEvent` com `Security.canAct` (rate limit) + guards de tipo; `Security.isNear` (proximity); `Security.logSuspicious`.
+
+### Contrato (resumo)
+- **Callbacks:** `getProfile`, `openTarget`.
+- **Eventos servidor:** `invite`, `acceptInvite`, `kickPlayer`, `selectDiscipline`, `selectMission`, `startJob`, `setRewardSplit`, `resetJob`, `completeTarget`, `cutPower`, `hitTarget`, `closeTarget`, `buildEquipment`, `removeEquipment`, `moveLift`, `loadVehicle`, `deliverTow`, `deliverVehicle`, `requestService`.
+- **Eventos cliente:** `receiveInvite`, `refreshLobby`, `leftLobby`, `jobStarted`, `targetUpdated`, `targetHit`, `powerCut`, `refreshScore`, `jobComplete`, `jobReset`, `rewardScreen`, `equipmentBuilt`/`Removed`, `liftMove`, `towLoaded`, `towDelivered`, `serviceCall`.
+- **NUI:** `START_WELD`/`START_PANEL`/`START_WIRING`/`CLOSE`/`HUD_*`/`REWARD`; callback `minigameResult`.
+
+---
+
+## 9. Referência de configuração (`config/config.lua`)
+
+**Compartilhado (global):**
 | Chave | Descrição |
 |-------|-----------|
-| `Interaction` | coords, ped, blip, distância do target |
+| `Interaction` | NPC (coords, ped, blip, distância) |
 | `RequiredJob` | `'all'` ou `{ job = gradeMin }` |
-| `MaxPlayersPerLobby` / `InviteMaxDistance` | limites de coop |
-| `Cooldowns` | `selectMission`, `completeTarget` (≥2s), `build` |
-| `Vehicle` | modelos primário/secundário, fuel |
-| `VehicleDeposit` | depósito cobrado do dono ao iniciar; reembolsado ao entregar; perdido se abandonar |
-| `RequiredItem` | item exigido p/ iniciar (ox_inventory); `consume`/`wholeTeam` |
-| `RewardItems` | itens dropados por reparo (chance %) |
-| `BossRewardSplit` | dono define a % de pagamento de cada membro no menu |
-| `Equipment` | modelos de escada/lift, distância de construção |
-| `Minigames.byTask` | qual minigame cada tarefa usa |
-| `Minigames.welding/panel/wiring` | parâmetros por tarefa |
-| `Minigames.failDamage` | dano ao falhar |
-| `MaxLevel` / `RequiredXP` | progressão (auto 1000 +500/nível) |
-| `LogWebhookConvar` | nome da convar do webhook (sem token no código) |
-| `Regions` | regiões (key, título, awards, spawn, delivery, jobTasks, pools) |
-| `TargetRadius` / `RequiresEquipment` / `TrafficLightModels` | tabelas auxiliares |
+| `MaxPlayersPerLobby` / `InviteMaxDistance` / `JobResetCommand` | coop |
+| `Cooldowns` | rate limits por evento |
+| `VehicleDeposit` / `RequiredItem` / `RewardItems` / `BossRewardSplit` | economia |
+| `Dispatch` | serviço sob demanda (command, fee, disciplines) |
+| `Equipment` | escada/lift |
+| `WorkClothes` / `RedArrowMarker` | cloakroom / seta |
+| `Minigames.failDamage` / `minSeconds` | dano / anti-skip |
+| `MaxLevel` / `RequiredXP` | progressão |
+| `LogWebhookConvar` | webhook por convar |
+
+**Por frente (`Config.Disciplines[id]`):**
+`label`, `icon`, `minLevel`, `kind?`, `vehicle`, `taskLabels`, `requiresEquipment`, `needsPower?`, `targetRadius`, `taskMode`, `drill?`, `build?`, `minigames?`, `clothes?`, `trafficLightModels?`, `variants?`/`deliveryPoints?` (towing), `regions` (key, title, minLevel, awards, spawn, delivery, jobTasks+pools | towCount).
 
 ---
 
-## 7. Mapa de arquivos
+## 10. Mapa de arquivos
 
 ```
-config/config.lua      regiões, cooldowns, minigames, XP
-shared/utils.lua       recompensa coop, sorteio, XP, comparação de coords
+config/config.lua      frentes (Disciplines), config global, dispatch
+shared/utils.lua       discipline()/region(), recompensa coop, sorteio, XP
 server/database.lua    queries oxmysql (?)
 server/security.lua    getPlayer, rate limit, proximity, log
-server/main.lua        lobby, convites, start, veículo
-server/missions.lua    validação de conserto + equipamento
-server/rewards.lua     entrega, pagamento, XP, persistência
-client/main.lua        ped, ox_target, menu (ox_lib), lobby
-client/mission.lua     blips, markers, fumaça, alvos, entrega, semáforo
-client/equipment.lua   escada + lift (props sincronizados)
-client/minigames.lua   roteador híbrido (NUI / skillcheck) + dano
-html/                  index.html · style.css · app.js (3 minigames)
-sql/migration.sql      tabela com PRIMARY KEY
+server/main.lua        lobby, frentes, convites, start, veículo, gate, mission
+server/missions.lua    conclusão (minigame/drill/build), equipamento, lift, power
+server/towing.lua      carregar/entregar veículo (guincho)
+server/dispatch.lua    serviço sob demanda
+server/rewards.lua     entrega, pagamento (split/depósito), XP, persistência
+client/main.lua        ped, ox_target, menu (frente→região), lobby, reset cmd
+client/mission.lua     blips, markers, alvos (modos), entrega, HUD, cloakroom, seta
+client/equipment.lua   escada + lift móvel (SlideObject)
+client/minigames.lua   roteador NUI/skillcheck + dano
+client/towing.lua      loop de reboque (carregar/entregar/attach)
+client/dispatch.lua    /pedirservico + blip do chamado
+html/                  index.html · style.css · app.js (minigames + HUD + recompensa)
+sql/migration.sql      tabela vp_cityworks (PK)
 ```
 
 ---
 
-## 8. Funcionalidades e roadmap
+## 11. Pendências de ajuste in-game
 
-### 8.0 Frentes e modos de tarefa (SADOT)
-- **Motor por modo** (`discipline.taskMode[task]`): `minigame` (NUI solda/voltímetro/fiação),
-  `drill` (alvo com vida — britadeira, sincronizado via `hitTarget`), `build` (progressbar + props),
-  `tow` (frente `kind='towing'`: carregar veículo no flatbed → entregar num ponto).
-- **6 frentes** (`Config.DisciplineOrder`): electrician, roadwork (drill), construction (build),
-  signage (build+minigame), streetlight (minigame), towing (tow). Menu: frente → região.
-- **Dispatch sob demanda** (`/pedirservico`): cidadão paga taxa; equipes em serviço da frente
-  recebem blip+notify no local.
-- ⚠️ Em-game tuning: física do lift e do attach do flatbed (guincho); coords das frentes novas.
+Tudo o que depende de física/mundo (não dá pra validar fora do servidor):
+- **Lift** (escada/elevador): velocidade/altura/“pegada” do player.
+- **Guincho**: offset do attach no flatbed (idealmente por modelo).
+- **Coords** das frentes novas (asfalto/construção/sinalização/guincho) — posicionar no mapa real.
 
-### 9.1 Implementado ✅
-- Lobby coop (criar, convidar por ID c/ proximidade, aceitar, expulsar, encerrar ao sair).
-- Seleção de região + gate de nível mínimo.
-- Spawn de veículo(s), chaves, combustível; 2º veículo se >2 players.
-- 5 tipos de alvo com blips, marcadores e fumaça elétrica.
-- Trava de concorrência por alvo (`open`/`openBy`).
-- **3 minigames** (solda, painel/voltímetro, fiação).
-- Escada (prop sincronizado) e **lift móvel** (`SlideObject` + colisão, player sobe junto).
-- Semáforo piscando cor aleatória quando defeituoso.
-- Dano de choque ao falhar minigame.
-- Conclusão → entrega do veículo → recompensa dividida + XP/level + persistência.
-- Multiplicador coop; comando de reset; blip do veículo; HUD ao vivo + tela de recompensa.
-- 4 regiões; limpeza em `playerDropped`/`onResourceStop`.
-- **Depósito de veículo** (cobra/reembolsa/perde no abandono), **itens de recompensa por reparo**, **item obrigatório** p/ iniciar, **boss split** de recompensa.
-
-### 9.2 Roadmap (opcional)
-| Item | Estado | Obs |
-|------|--------|-----|
-| Extras cosméticos do veículo (`SetVehicleExtra`) | ❌ opcional | trivial |
-| Menu de lobby em NUI custom (hoje ox_lib context) | ⚠️ funcional | opcional |
-| Ajuste fino de velocidade/altura do lift | ⚠️ tuning | teste in-game |
+O resto (lógica, eventos, NUI) está verificado: eventos client↔server casados, callbacks casados, 52/52 locale keys, manifest completo, Lua balanceado.
 
 ---
 
-## 9. Troubleshooting
+## 12. Troubleshooting
 
 | Sintoma | Causa provável |
 |---------|----------------|
-| Menu não abre | job exigido (`RequiredJob`) ou ox_target ausente |
-| Veículo não spawna | Entity Lockdown muito restrito / modelo inválido |
-| Sem combustível | ox_fuel espera statebag `fuel` (já setado no spawn) |
+| Menu não abre | `RequiredJob` ou ox_target ausente |
+| Duas Secretarias / NPC duplo | `vp_electrician` antigo ainda ativo — desabilite |
+| Veículo não spawna | Entity Lockdown / modelo inválido |
+| Sem combustível | ox_fuel espera statebag `fuel` (setado no spawn) |
 | Minigame não aparece | `ui_page`/`files` no manifest; cache NUI (restart) |
-| Não paga recompensa | veículo precisa estar no ponto de entrega (validado server-side) |
+| Não paga recompensa | veículo precisa estar no ponto de entrega |
+| Frente nova "no chão"/longe | coords de config a posicionar no mapa |
 | Texto em inglês | `setr ox:locale pt-br` |

@@ -11,44 +11,38 @@ Empresa de manutenção da cidade para **QBox** (nativo ox_lib/ox_inventory/ox_t
 - qbx_core 1.23.0 · ox_lib 3.32.2 · ox_inventory 2.44.8 · ox_target · ox_fuel · qbx_vehiclekeys · oxmysql
 
 ## Instalação
-1. Importe o SQL:
-   ```sql
-   -- sql/migration.sql
-   ```
-2. `server.cfg` (dentro do grupo `[standalone]` já é `ensure`d automaticamente; **não** duplique):
-   ```
-   ensure vp_cityworks
-   ```
-3. (Opcional) log via Discord, sem token hardcoded:
-   ```
-   set vp_cityworks_webhook "https://discord.com/api/webhooks/..."
-   ```
+1. Importe `sql/migration.sql` (tabela `vp_cityworks`).
+2. O grupo `[standalone]` já é `ensure`d — **não** duplique. Para forçar: `ensure vp_cityworks`.
+3. ⚠️ **Desabilite o `vp_electrician` antigo** (este resource o substitui; senão duplica NPC/tabela).
+4. (Opcional) log Discord por convar: `set vp_cityworks_webhook "https://discord.com/api/webhooks/..."`
+5. (Opcional) pt-BR: `setr ox:locale pt-br`.
 
 ## Gameplay (resumo)
-Pega ordem de serviço num NPC → cria lobby (até 4) → escolhe região → caminhão spawna → conserta alvos (transformador, quadro, poste de luz, semáforo, poste telefônico) via minigame → poste de luz/telefônico exigem **escada/lift** → todos OK → entrega o caminhão → recompensa (dinheiro dividido + XP, recompensa multiplica em coop).
+NPC → escolhe **frente** → escolhe **região** → cria lobby (até 4) → caminhão spawna (chave+fuel) →
+executa as tarefas conforme o modo da frente (minigame / britadeira / construção / reboque) →
+entrega o veículo no depot → **recompensa** (dinheiro dividido + XP, multiplica em coop, depósito reembolsado).
 
-## Arquitetura
-- **Server-authoritative**: o servidor mantém `Lobbies[ownerCid]` e revalida lobby, proximity, cooldown e trava de concorrência em cada conserto. O client nunca decide recompensa.
-- **Minigames** (seletor por tarefa em `Config.Minigames.byTask`) — **3 NUI custom** (`html/`), resultado unificado em `POST minigameResult`:
-  - `welding` (solda, arrastar terminal→oposto) → `fixStreetLamp`, `phonePole`
-  - `panel` (voltímetro: achar painel defeituoso + parafusos + switch) → `fixTrafo`, `fixHouseBoard`
-  - `wiring` (arrastar fio ao conector da mesma cor) → `fixTrafficLamp`
-  - `skillcheck` (ox_lib) fica como fallback.
-- **Segurança** (`server/security.lua`): `getPlayer`, rate limit, proximity server-side, log opcional.
+## Arquitetura (resumo)
+- **Server-authoritative**: `Lobbies[ownerCid]` derivado do `src`; revalida lobby, proximity, cooldown,
+  trava de concorrência, anti-skip e gate de nível em cada conclusão. O client nunca decide recompensa.
+- **Motor por frente** (`Config.Disciplines`) com 4 modos de tarefa: `minigame` (3 NUI: solda/voltímetro/fiação),
+  `drill` (alvo com vida), `build` (progress+props), `tow` (guincho/flatbed).
+- **Dispatch** (`/pedirservico`): cidadão chama, equipe em serviço recebe o chamado.
+- **Hardening completo** (`server/security.lua`): rate limit + guards de tipo + proximity em todos os eventos.
 
-## Status por fase
+## Status
 | Fase | Item | Estado |
 |------|------|--------|
-| 1 | Fundação (manifest, config, SQL, ox_target, ped) | ✅ |
-| 2 | Lobby coop (convite/aceite/kick/região/scoreboard) | ✅ (scoreboard = notify; NUI futura) |
-| 3 | Missão (spawn veículo+keys+fuel, blips, fumaça, alvos) | ✅ |
-| 4 | Minigames + 5 tarefas | ✅ **3 minigames NUI custom** (solda, painel/voltímetro, fiação) |
-| 5 | Escada + Lift | ✅ escada + **lift móvel** (lógica do base: SlideObject + colisão, player sobe junto) |
-| 6 | Recompensa + XP/level + persistência + hardening | ✅ |
-| + | HUD ao vivo + tela de recompensa + 4 regiões + comando reset + blip do veículo | ✅ |
+| 1 | Motor multi-frente + eletricista completo (3 minigames, lift, HUD, recompensa) | ✅ |
+| 1 | Extras: depósito, item obrigatório, itens de recompensa, boss split, 2 papéis, cloakroom, seta | ✅ |
+| 2 | Modos de tarefa `drill` + `build` | ✅ |
+| 3 | Frentes Asfalto / Construção / Sinalização / Iluminação | ✅ |
+| 4 | Frente Guincho (`tow`) | ✅ |
+| 5 | Dispatch sob demanda | ✅ |
+| 6 | Docs + precheck (eventos/callbacks/locales casados, manifest, balance) | ✅ |
 
-## TODO de fidelidade (restante, opcional)
-- Extras cosméticos do veículo; menu de lobby em NUI custom (hoje ox_lib).
-- Elevador (lift) móvel com controle de altura.
-- Scoreboard/HUD visual ao vivo.
-- Mais regiões em `config/config.lua` (formato pronto, 2 incluídas).
+## Ajuste in-game pendente (física/mundo)
+- "Pegada" do **lift** e offset do **attach do flatbed** (guincho).
+- **Coords** das frentes novas (asfalto/construção/sinalização/guincho) — posicionar no mapa real.
+
+Detalhes técnicos: ver `DOCUMENTATION.md`. Roadmap das fases: `ROADMAP.md`.
