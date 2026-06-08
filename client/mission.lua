@@ -11,6 +11,7 @@ local smokeFx = {}      -- [targetId] = ptfxHandle
 local deliveryBlip = nil
 local vehicleBlips = {} -- blips que seguem os veiculos do job
 local savedClothes = nil -- componentes originais p/ restaurar (cloakroom)
+local buildProps = {}   -- props spawnados no modo build
 
 ---------------------------------------------------------------------
 -- HELPERS
@@ -60,6 +61,19 @@ local function applyWorkClothes()
     end
 end
 
+--- MODO BUILD: spawna o prop construido no alvo (global p/ uso no handler).
+function spawnBuildProp(target)
+    local b = (ActiveDiscipline and ActiveDiscipline.build and ActiveDiscipline.build[target.type]) or {}
+    if not b.prop then return end
+    lib.requestModel(b.prop)
+    local obj = CreateObject(b.prop, target.coords.x, target.coords.y, target.coords.z - (b.zOffset or 1.0),
+        false, true, false)
+    SetEntityHeading(obj, b.heading or 0.0)
+    FreezeEntityPosition(obj, true)
+    SetModelAsNoLongerNeeded(b.prop)
+    buildProps[#buildProps + 1] = obj
+end
+
 --- Restaura os componentes salvos (fim/reset do job).
 local function restoreClothes()
     if not savedClothes then return end
@@ -105,6 +119,8 @@ local function clearMission()
     vehicleBlips = {}
     for id in pairs(smokeFx) do stopSmoke(id) end
     if deliveryBlip then RemoveBlip(deliveryBlip); deliveryBlip = nil end
+    for _, obj in ipairs(buildProps) do if DoesEntityExist(obj) then DeleteEntity(obj) end end
+    buildProps = {}
     ClearEquipment() -- equipment.lua
     restoreClothes() -- cloakroom
     SendNUIMessage({ action = 'HUD_HIDE' })
@@ -144,6 +160,8 @@ RegisterNetEvent('vp_cityworks:targetUpdated', function(targetId, fixed, progres
         target.fixed = true
         if missionBlips[targetId] then RemoveBlip(missionBlips[targetId]); missionBlips[targetId] = nil end
         stopSmoke(targetId)
+        -- MODO BUILD: spawna o prop construido
+        if target.mode == 'build' then spawnBuildProp(target) end
         if progress then
             CurrentMission.progress = progress
             SendNUIMessage({ action = 'HUD_TASKS', tasks = progress })
@@ -153,6 +171,13 @@ end)
 
 RegisterNetEvent('vp_cityworks:refreshScore', function(players)
     SendNUIMessage({ action = 'HUD_PLAYERS', players = players })
+end)
+
+-- MODO DRILL: vida do alvo atualizada (feedback)
+RegisterNetEvent('vp_cityworks:targetHit', function(targetId, health)
+    if CurrentMission and CurrentMission.targets[targetId] then
+        CurrentMission.targets[targetId].health = health
+    end
 end)
 
 -- 2 papeis: tensao desligada por alguem da equipe
@@ -194,29 +219,33 @@ CreateThread(function()
                         DrawMarker(0, target.coords.x, target.coords.y, target.coords.z + 2.4,
                             0,0,0, 0,0,0, 1.2,1.2,1.2, 220,30,30,200, true,true,2,nil,nil,false)
                     end
+                    local mode = target.mode or 'minigame'
                     if dist < 20.0 then
                         sleep = 0
-                        startSmoke(id, target.coords)
+                        if mode == 'minigame' then startSmoke(id, target.coords) end
                         DrawMarker(2, target.coords.x, target.coords.y, target.coords.z + 1.0,
                             0,0,0, 0,0,0, 0.5,0.5,0.5, 0,255,0,180, false,false,2,nil,nil,false)
                         if dist < radius then
-                            local req = ActiveDiscipline and ActiveDiscipline.requiresEquipment[target.type]
-                            local needsPower = ActiveDiscipline and ActiveDiscipline.needsPower
-                                and ActiveDiscipline.needsPower[target.type] and not target.powerCut
-                            if req and not target.equipped then
-                                -- precisa de escada/lift: delega ao equipment.lua
-                                HandleEquipmentPrompt(target, req)
-                            elseif needsPower then
-                                -- 2 papeis: alguem precisa desligar a tensao primeiro
-                                DrawText3D(target.coords, locale('cut_power_prompt'))
-                                if IsControlJustReleased(0, 38) then
-                                    CutPower(target)
-                                end
+                            if mode == 'drill' then
+                                -- alvo com vida: bater ate zerar
+                                DrawText3D(target.coords, ('[E] %s (%s)'):format(locale('drill_prompt'), target.health or '?'))
+                                if IsControlJustReleased(0, 38) then DrillTarget(target) end
+                            elseif mode == 'build' then
+                                DrawText3D(target.coords, ('[E] %s'):format(locale('build_prompt')))
+                                if IsControlJustReleased(0, 38) then BuildTask(target) end
                             else
-                                local label = (ActiveDiscipline and ActiveDiscipline.taskLabels[target.type]) or target.type
-                                DrawText3D(target.coords, ('[E] %s'):format(label))
-                                if IsControlJustReleased(0, 38) then
-                                    TryOpenTarget(target)
+                                local req = ActiveDiscipline and ActiveDiscipline.requiresEquipment[target.type]
+                                local needsPower = ActiveDiscipline and ActiveDiscipline.needsPower
+                                    and ActiveDiscipline.needsPower[target.type] and not target.powerCut
+                                if req and not target.equipped then
+                                    HandleEquipmentPrompt(target, req)
+                                elseif needsPower then
+                                    DrawText3D(target.coords, locale('cut_power_prompt'))
+                                    if IsControlJustReleased(0, 38) then CutPower(target) end
+                                else
+                                    local label = (ActiveDiscipline and ActiveDiscipline.taskLabels[target.type]) or target.type
+                                    DrawText3D(target.coords, ('[E] %s'):format(label))
+                                    if IsControlJustReleased(0, 38) then TryOpenTarget(target) end
                                 end
                             end
                         end
@@ -268,6 +297,41 @@ function TryOpenTarget(target)
         end
         TriggerServerEvent('vp_cityworks:completeTarget', target.id, success)
     end)
+end
+
+--- MODO DRILL: bate no alvo (progressbar). Servidor decrementa a vida.
+function DrillTarget(target)
+    local d = (ActiveDiscipline and ActiveDiscipline.drill and ActiveDiscipline.drill[target.type]) or {}
+    local ok = lib.progressBar({
+        duration = d.hitTime or 1600,
+        label = locale('drilling'),
+        useWhileDead = false, canCancel = true,
+        disable = { move = true, car = true, combat = true },
+        anim = { dict = 'melee@large_wpn@streamed_core', clip = 'ground_attack_on_spot' },
+    })
+    if ok then TriggerServerEvent('vp_cityworks:hitTarget', target.id) end
+end
+
+--- MODO BUILD: progressbar -> conclui (prop spawna via targetUpdated).
+function BuildTask(target)
+    local res = lib.callback.await('vp_cityworks:openTarget', false, { targetId = target.id })
+    if not res or res.needEquipment or res.needPower then
+        lib.notify({ description = locale('target_busy'), type = 'error' })
+        return
+    end
+    local b = (ActiveDiscipline and ActiveDiscipline.build and ActiveDiscipline.build[target.type]) or {}
+    local ok = lib.progressBar({
+        duration = b.time or 6000,
+        label = locale('building'),
+        useWhileDead = false, canCancel = true,
+        disable = { move = true, car = true, combat = true },
+        anim = { dict = 'amb@world_human_hammering@male@base', clip = 'base' },
+    })
+    if ok then
+        TriggerServerEvent('vp_cityworks:completeTarget', target.id, true)
+    else
+        TriggerServerEvent('vp_cityworks:closeTarget', target.id)
+    end
 end
 
 ---------------------------------------------------------------------

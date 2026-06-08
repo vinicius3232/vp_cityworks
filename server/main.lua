@@ -244,13 +244,20 @@ local function generateMission(disc, region)
     for _, task in ipairs(region.jobTasks) do
         local pool = region.pools[task.name] or {}
         local picked = Utils.pickRandom(pool, task.count)
+        local mode = (disc.taskMode and disc.taskMode[task.name]) or 'minigame'
         mission.progress[task.name] = { count = #picked, made = 0, label = disc.taskLabels[task.name] or task.name }
         for _, coords in ipairs(picked) do
             nextId = nextId + 1
+            local hp
+            if mode == 'drill' then
+                hp = (disc.drill and disc.drill[task.name] and disc.drill[task.name].health) or 4
+            end
             mission.targets[nextId] = {
                 id = nextId,
                 type = task.name,
                 coords = coords,
+                mode = mode,
+                health = hp,
                 fixed = false,
                 openBy = nil,
                 equipped = disc.requiresEquipment[task.name] == nil, -- ja "ok" se nao exige

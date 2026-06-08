@@ -1,6 +1,38 @@
 -- server/missions.lua :: validacao de conserto de alvos + equipamento sincronizado
 
 ---------------------------------------------------------------------
+-- CONCLUSAO DE UM ALVO (logica compartilhada: minigame / drill / build)
+-- Marca fixed, progresso, score, itens, e checa fim da missao.
+---------------------------------------------------------------------
+local function completeTargetInternal(lobby, target, cid, src)
+    if target.fixed then return end
+    target.fixed = true
+    target.openBy = nil
+    target.openAt = nil
+    lobby.mission.remaining = lobby.mission.remaining - 1
+
+    local prog = lobby.mission.progress[target.type]
+    if prog then prog.made = prog.made + 1 end
+
+    lobby.players[cid].score = (lobby.players[cid].score or 0) + 1
+
+    -- itens de recompensa (chance %) -> quem concluiu
+    for _, ri in ipairs(Config.RewardItems) do
+        if ri.item and math.random(100) <= (ri.chance or 0) then
+            exports.ox_inventory:AddItem(src, ri.item, ri.amount or 1)
+        end
+    end
+
+    vpBroadcast(lobby, 'vp_cityworks:targetUpdated', target.id, true, lobby.mission.progress)
+    vpBroadcast(lobby, 'vp_cityworks:refreshScore', lobby.players)
+
+    if lobby.mission.remaining <= 0 then
+        lobby.finished = true
+        vpBroadcast(lobby, 'vp_cityworks:jobComplete', lobby.region.deliveryCoords)
+    end
+end
+
+---------------------------------------------------------------------
 -- COMPLETAR UM ALVO
 -- O client roda o minigame e ENVIA o resultado, mas o servidor revalida
 -- tudo (lobby, alvo aberto por este player, proximity, cooldown) e e quem
@@ -40,33 +72,13 @@ RegisterNetEvent('vp_cityworks:completeTarget', function(targetId, success)
 
     if not success then
         -- falhou: libera o alvo (dano e aplicado no client)
+        target.openBy = nil
+        target.openAt = nil
         vpBroadcast(lobby, 'vp_cityworks:targetUpdated', target.id, false, false)
         return
     end
 
-    target.fixed = true
-    lobby.mission.remaining = lobby.mission.remaining - 1
-
-    local prog = lobby.mission.progress[target.type]
-    if prog then prog.made = prog.made + 1 end
-
-    -- credita score do jogador (para o scoreboard)
-    lobby.players[cid].score = (lobby.players[cid].score or 0) + 1
-
-    -- itens de recompensa por reparo (chance %) -> vao para quem consertou
-    for _, ri in ipairs(Config.RewardItems) do
-        if ri.item and math.random(100) <= (ri.chance or 0) then
-            exports.ox_inventory:AddItem(src, ri.item, ri.amount or 1)
-        end
-    end
-
-    vpBroadcast(lobby, 'vp_cityworks:targetUpdated', target.id, true, lobby.mission.progress)
-    vpBroadcast(lobby, 'vp_cityworks:refreshScore', lobby.players)
-
-    if lobby.mission.remaining <= 0 then
-        lobby.finished = true
-        vpBroadcast(lobby, 'vp_cityworks:jobComplete', lobby.region.deliveryCoords)
-    end
+    completeTargetInternal(lobby, target, cid, src)
 end)
 
 -- 2 PAPEIS: desligar a tensao de um alvo (libera o reparo p/ todos)
@@ -86,6 +98,28 @@ RegisterNetEvent('vp_cityworks:cutPower', function(targetId)
     end
     target.powerCut = true
     vpBroadcast(lobby, 'vp_cityworks:powerCut', target.id)
+end)
+
+-- MODO DRILL: bater no alvo (alvo com vida). Conclui quando a vida zera.
+RegisterNetEvent('vp_cityworks:hitTarget', function(targetId)
+    local src = source
+    if type(targetId) ~= 'number' then return end
+    if not Security.canAct(src, 'hitTarget', 700) then return end
+    local lobby, cid = vpGetLobbyBySrc(src)
+    if not lobby or not lobby.started or not lobby.mission then return end
+    local target = lobby.mission.targets[targetId]
+    if not target or target.fixed or target.mode ~= 'drill' then return end
+    local disc = Utils.discipline(lobby.disciplineId)
+    if not Security.isNear(src, target.coords, (disc.targetRadius[target.type]) or 3.0) then
+        Security.logSuspicious(src, 'hitTarget fora de alcance', { targetId = targetId })
+        return
+    end
+    target.health = (target.health or 1) - 1
+    if target.health <= 0 then
+        completeTargetInternal(lobby, target, cid, src)
+    else
+        vpBroadcast(lobby, 'vp_cityworks:targetHit', target.id, target.health)
+    end
 end)
 
 -- Liberar alvo sem concluir (jogador fechou/cancelou)
