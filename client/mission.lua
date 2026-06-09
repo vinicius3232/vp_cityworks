@@ -44,6 +44,14 @@ local function stopSmoke(targetId)
     end
 end
 
+--- Estouro de faiscas eletricas ao concluir um alvo (feedback "consertou!").
+local function burstFx(coords)
+    lib.requestNamedPtfxAsset('core')
+    UseParticleFxAssetNextCall('core')
+    StartParticleFxNonLoopedAtCoord('ent_ray_prologue_elec_crackle_sp',
+        coords.x, coords.y, coords.z + 0.2, 0.0, 0.0, 0.0, 1.2, false, false, false)
+end
+
 --- Roupa de trabalho: salva os componentes atuais e aplica os da frente.
 local function applyWorkClothes()
     if not Config.WorkClothes.enable or not ActiveDiscipline or not ActiveDiscipline.clothes then return end
@@ -160,6 +168,7 @@ RegisterNetEvent('vp_cityworks:targetUpdated', function(targetId, fixed, progres
         target.fixed = true
         if missionBlips[targetId] then RemoveBlip(missionBlips[targetId]); missionBlips[targetId] = nil end
         stopSmoke(targetId)
+        burstFx(target.coords) -- faiscas de "consertou!"
         -- MODO BUILD: spawna o prop construido
         if target.mode == 'build' then spawnBuildProp(target) end
         if progress then
@@ -247,9 +256,12 @@ CreateThread(function()
                         end
                     end
                     local mode = target.mode or 'minigame'
+                    -- faiscas no alvo eletrico quebrado (visiveis de longe)
+                    if mode == 'minigame' then
+                        if dist < 35.0 then startSmoke(id, target.coords) else stopSmoke(id) end
+                    end
                     if dist < 20.0 then
                         sleep = 0
-                        if mode == 'minigame' then startSmoke(id, target.coords) end
                         local nr = (Config.Marker and Config.Marker.near) or { 45, 255, 66 }
                         local p2 = 0.5 + 0.5 * math.sin(GetGameTimer() / 220)
                         DrawMarker(2, target.coords.x, target.coords.y, target.coords.z + 1.0 + p2 * 0.1,
@@ -279,8 +291,6 @@ CreateThread(function()
                                 end
                             end
                         end
-                    else
-                        stopSmoke(id)
                     end
                 end
             end
