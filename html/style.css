@@ -77,18 +77,18 @@ html, body {
 .weld-hint b { color: #ff7b00; }
 .weld-foot { border-top: 1px solid rgba(255,255,255,.08); padding-top: .6vw; margin-top: .6vw; font-size: .85vw; }
 
-/* painel/parede rachada (claro, igual a referencia) */
+/* chapa de metal escura (escovada) — combina com a UI dark/neon */
 .weld-panel {
     position: relative; width: 100%; aspect-ratio: 600 / 360;
     border-radius: 8px; overflow: hidden; cursor: crosshair;
-    border: 2px solid #15171a; box-shadow: inset 0 0 34px rgba(0,0,0,.28);
+    border: 2px solid #0c0d10; box-shadow: inset 0 0 44px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.05);
     background:
-        repeating-linear-gradient(116deg, rgba(0,0,0,.035) 0 7px, transparent 7px 16px),
-        radial-gradient(120% 90% at 30% 20%, #e2e0d9 0%, #cbc9c1 55%, #b6b4ab 100%);
+        repeating-linear-gradient(116deg, rgba(255,255,255,.022) 0 7px, transparent 7px 17px),
+        radial-gradient(130% 100% at 28% 18%, #3c424b 0%, #262a30 55%, #181b20 100%);
 }
 .weld-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-/* sulco da trinca a soldar */
-.weld-base { fill: none; stroke: #2a2b2f; stroke-width: 11; stroke-linecap: round; stroke-linejoin: round; opacity: .9; }
+/* sulco/gouge da trinca a soldar (escuro fundo no metal + leve realce) */
+.weld-base { fill: none; stroke: #0a0b0d; stroke-width: 11; stroke-linecap: round; stroke-linejoin: round; opacity: .95; }
 /* metal derretido preenchendo */
 .weld-fill {
     fill: none; stroke: url(#wfill); stroke-width: 10; stroke-linecap: round; stroke-linejoin: round;
