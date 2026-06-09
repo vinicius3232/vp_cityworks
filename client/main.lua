@@ -7,6 +7,16 @@ local selectedRegion = false
 local currentDiscipline = nil -- id da frente ativa no lobby
 
 ---------------------------------------------------------------------
+-- NOTIFICACAO in-NUI (unifica client + server na NUI propria)
+-- ntype no estilo ox_lib: 'error' | 'success' | 'inform' (-> info)
+---------------------------------------------------------------------
+function CityNotify(msg, ntype)
+    SendNUIMessage({ action = 'NOTIFY', ntype = ntype or 'inform', message = msg })
+end
+-- o servidor (Framework.Notify) dispara este evento p/ cair na NUI
+RegisterNetEvent('vp_cityworks:notify', function(msg, ntype) CityNotify(msg, ntype) end)
+
+---------------------------------------------------------------------
 -- PED + BLIP + TARGET
 ---------------------------------------------------------------------
 CreateThread(function()
@@ -56,7 +66,7 @@ local function canOpen()
             return true
         end
     end
-    lib.notify({ description = locale('wrong_job'), type = 'error' })
+    CityNotify(locale('wrong_job'), 'error')
     return false
 end
 
@@ -142,7 +152,7 @@ end
 function OpenMenu()
     if not canOpen() then return end
     if JobActive then
-        lib.notify({ description = locale('job_already_started'), type = 'inform' })
+        CityNotify(locale('job_already_started'), 'inform')
         return
     end
     if not fetchAndSend('OPEN_MENU') then return end

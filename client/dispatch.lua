@@ -25,12 +25,7 @@ end, false)
 -- Trabalhador em servico: recebe o chamado (notify + blip com rota)
 RegisterNetEvent('vp_cityworks:serviceCall', function(data)
     if not data or not data.coords then return end
-    lib.notify({
-        title = locale('dispatch_call_title'),
-        description = ('%s — %s'):format(data.label or '', data.requester or ''),
-        type = 'inform',
-        duration = 12000,
-    })
+    CityNotify(('%s: %s — %s'):format(locale('dispatch_call_title'), data.label or '', data.requester or ''), 'inform')
     local blip = AddBlipForCoord(data.coords.x, data.coords.y, data.coords.z)
     SetBlipSprite(blip, 280)
     SetBlipColour(blip, 5)

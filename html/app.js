@@ -501,6 +501,7 @@ window.addEventListener('message', (ev) => {
         case 'HUD_HIDE':     $('hud').classList.add('hidden'); break;
         case 'REWARD':       showReward(d.data); break;
         case 'SFX':          if (d.play) sfxStart(d.sfx); else sfxStop(); break;
+        case 'NOTIFY':       cityNotify(d.ntype, d.message); break;
         case 'OPEN_MENU':    openMenu(d.data); break;
         case 'MENU_UPDATE':  if (menuState) renderMenu(d.data); break;
         case 'CLOSE_MENU':   closeMenu(); break;
@@ -543,6 +544,22 @@ function showReward(data) {
     $('reward').classList.remove('hidden');
     if (rewardTimer) clearTimeout(rewardTimer);
     rewardTimer = setTimeout(() => $('reward').classList.add('hidden'), 6000);
+}
+
+/* ============================================================
+   NOTIFICACOES in-NUI (fila + auto-some)
+============================================================ */
+function cityNotify(ntype, message) {
+    const c = $('notify'); if (!c) return;
+    const t = (ntype === 'error' || ntype === 'success') ? ntype : 'info';
+    const box = document.createElement('div');
+    box.className = 'notify-box ' + t;
+    const icon = t === 'error' ? '!' : (t === 'success' ? '✓' : 'i');
+    const title = t === 'error' ? 'Erro' : (t === 'success' ? 'Sucesso' : 'Info');
+    box.innerHTML = `<div class="notify-ico">${icon}</div><div class="notify-txt">` +
+        `<span class="notify-title">${title}</span><span class="notify-msg">${message || ''}</span></div>`;
+    c.appendChild(box);
+    setTimeout(() => { box.classList.add('out'); setTimeout(() => box.remove(), 320); }, 3600);
 }
 
 /* ============================================================

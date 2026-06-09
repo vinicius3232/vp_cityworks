@@ -107,16 +107,10 @@ if IsDuplicityVersion() then
         end
     end
 
+    --- Notificacao do resource: cai na NUI propria (vp_cityworks) p/ um visual
+    --- unificado. Independe do framework (so precisa do nosso client carregado).
     function Framework.Notify(src, msg, ntype)
-        if Framework.name == 'qbx' then
-            exports.qbx_core:Notify(src, msg, ntype)
-        elseif Framework.name == 'qb' then
-            TriggerClientEvent('QBCore:Notify', src, msg, ntype)
-        elseif Framework.name == 'esx' then
-            TriggerClientEvent('esx:showNotification', src, msg)
-        else
-            TriggerClientEvent('ox_lib:notify', src, { description = msg, type = ntype })
-        end
+        TriggerClientEvent('vp_cityworks:notify', src, msg, ntype)
     end
 
     --- Da chave do veiculo ao player (auto: qbx_vehiclekeys, qb-vehiclekeys; senao Config.GiveKeysFn)

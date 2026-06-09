@@ -499,3 +499,35 @@ html, body {
 .det-rw { flex: 1; display: flex; flex-direction: column; gap: .15vw; background: #0c0d10; border-radius: 8px; padding: .5vw .6vw; font-weight: 800; font-size: .95vw; }
 .det-rw span { font-size: .58vw; letter-spacing: 1px; color: #8a8f98; font-weight: 600; }
 .det-rw.money { color: #2dff42; } .det-rw.xp { color: #4aa3ff; }
+
+/* ============================================================
+   Notificacoes in-NUI (info / erro / sucesso)
+============================================================ */
+.notify-list {
+    position: absolute; top: 2.2vh; left: 50%; transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: .6vh;
+    z-index: 70; pointer-events: none;
+}
+.notify-box {
+    display: flex; align-items: center; gap: .7vw; min-width: 15vw; max-width: 26vw;
+    padding: .6vw 1vw; border-radius: 10px; color: #e7e9ec;
+    background: linear-gradient(160deg, rgba(43,47,54,.96), rgba(20,23,27,.96));
+    border: 1px solid #0c0d10; border-left: 4px solid #ffcf24;
+    box-shadow: 0 8px 24px rgba(0,0,0,.5); animation: notifyIn .25s ease-out;
+}
+.notify-box.out { animation: notifyOut .3s ease-in forwards; }
+.notify-box.info    { border-left-color: #4aa3ff; }
+.notify-box.error   { border-left-color: #ff4545; }
+.notify-box.success { border-left-color: #2dff42; }
+.notify-ico {
+    width: 1.5vw; height: 1.5vw; border-radius: 50%; flex: 0 0 auto;
+    display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: .9vw; color: #0c0d10;
+}
+.notify-box.info .notify-ico    { background: #4aa3ff; }
+.notify-box.error .notify-ico   { background: #ff4545; color: #fff; }
+.notify-box.success .notify-ico { background: #2dff42; }
+.notify-txt { display: flex; flex-direction: column; }
+.notify-title { font-size: .78vw; font-weight: 800; }
+.notify-msg { font-size: .72vw; color: #b9bec5; }
+@keyframes notifyIn  { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes notifyOut { to { opacity: 0; transform: translateY(-12px); } }

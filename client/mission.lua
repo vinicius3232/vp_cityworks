@@ -149,7 +149,7 @@ RegisterNetEvent('vp_cityworks:jobStarted', function(data)
     applyWorkClothes()
     -- HUD ao vivo
     SendNUIMessage({ action = 'HUD_SHOW', tasks = data.progress, players = data.players })
-    lib.notify({ description = MissionRegion.title, type = 'inform' })
+    CityNotify(MissionRegion.title, 'inform')
 end)
 
 RegisterNetEvent('vp_cityworks:targetUpdated', function(targetId, fixed, progress)
@@ -188,7 +188,7 @@ RegisterNetEvent('vp_cityworks:powerCut', function(targetId)
 end)
 
 RegisterNetEvent('vp_cityworks:jobComplete', function(deliveryCoords)
-    lib.notify({ description = locale('job_complete'), type = 'success' })
+    CityNotify(locale('job_complete'), 'success')
     if deliveryBlip then RemoveBlip(deliveryBlip) end
     deliveryBlip = addBlip(deliveryCoords, locale('deliver_vehicle'), 1, 29)
     SetNewWaypoint(deliveryCoords.x, deliveryCoords.y)
@@ -198,7 +198,7 @@ end)
 
 RegisterNetEvent('vp_cityworks:jobReset', function()
     clearMission()
-    lib.notify({ description = locale('reset_job'), type = 'inform' })
+    CityNotify(locale('reset_job'), 'inform')
 end)
 
 ---------------------------------------------------------------------
@@ -295,16 +295,16 @@ end
 function TryOpenTarget(target)
     local res = lib.callback.await('vp_cityworks:openTarget', false, { targetId = target.id })
     if not res then
-        lib.notify({ description = locale('target_busy'), type = 'error' })
+        CityNotify(locale('target_busy'), 'error')
         return
     end
     if res.needEquipment then
         local key = res.needEquipment == 'ladder' and 'need_ladder' or 'need_lift'
-        lib.notify({ description = locale(key), type = 'error' })
+        CityNotify(locale(key), 'error')
         return
     end
     if res.needPower then
-        lib.notify({ description = locale('need_power'), type = 'error' })
+        CityNotify(locale('need_power'), 'error')
         return
     end
     -- roda o minigame (minigames.lua) e envia resultado ao server
@@ -335,7 +335,7 @@ end
 function BuildTask(target)
     local res = lib.callback.await('vp_cityworks:openTarget', false, { targetId = target.id })
     if not res or res.needEquipment or res.needPower then
-        lib.notify({ description = locale('target_busy'), type = 'error' })
+        CityNotify(locale('target_busy'), 'error')
         return
     end
     local b = (ActiveDiscipline and ActiveDiscipline.build and ActiveDiscipline.build[target.type]) or {}
