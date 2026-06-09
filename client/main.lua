@@ -61,123 +61,83 @@ local function canOpen()
 end
 
 ---------------------------------------------------------------------
--- MENU (ox_lib context)
+-- MENU (NUI custom)
 ---------------------------------------------------------------------
+local menuOpen = false
+
+--- Monta o payload do menu a partir do getProfile + Config.Disciplines.
+local function buildMenuPayload(data)
+    local discId = data.disciplineId or Config.DisciplineOrder[1]
+    local disc = Config.Disciplines[discId]
+    local disciplines = {}
+    for _, id in ipairs(Config.DisciplineOrder) do
+        local d = Config.Disciplines[id]
+        disciplines[#disciplines + 1] = { id = id, label = d.label, icon = d.icon, locked = data.level < (d.minLevel or 0) }
+    end
+    local regions = {}
+    if disc then
+        for _, r in ipairs(disc.regions) do
+            regions[#regions + 1] = {
+                key = r.key, title = r.title, money = r.awards.money, xp = r.awards.xp, minLevel = r.minLevel,
+                locked = data.level < r.minLevel,
+                selected = (data.region and data.region.key == r.key) or false,
+            }
+        end
+    end
+    local players = {}
+    for cid, p in pairs(data.players or {}) do
+        players[#players + 1] = { cid = cid, name = p.name, level = p.level, owner = (cid == data.ownerCid) }
+    end
+    return {
+        name = data.name, level = data.level, xp = data.xp, nextXp = data.nextXp, money = data.money,
+        isOwner = data.isOwner, maxPlayers = data.maxPlayers or Config.MaxPlayersPerLobby,
+        bossSplit = Config.BossRewardSplit,
+        disciplines = disciplines, currentDiscipline = discId, regions = regions, players = players,
+        selectedRegion = data.region and data.region.key or nil,
+    }
+end
+
+--- Busca dados frescos e envia ao NUI (OPEN_MENU ou MENU_UPDATE).
+local function fetchAndSend(action)
+    local data = lib.callback.await('vp_cityworks:getProfile', false)
+    if not data then return end
+    lobbyPlayers = data.players or {}
+    currentDiscipline = data.disciplineId or Config.DisciplineOrder[1]
+    selectedRegion = data.region or false
+    SendNUIMessage({ action = action, data = buildMenuPayload(data) })
+    return true
+end
+
+local function closeMenu()
+    if not menuOpen then return end
+    menuOpen = false
+    SetNuiFocus(false, false)
+    SendNUIMessage({ action = 'CLOSE_MENU' })
+end
+
 function OpenMenu()
     if not canOpen() then return end
     if JobActive then
         lib.notify({ description = locale('job_already_started'), type = 'inform' })
         return
     end
-    local data = lib.callback.await('vp_cityworks:getProfile', false)
-    if not data then return end
-    lobbyPlayers = data.players or {}
-    currentDiscipline = data.disciplineId or Config.DisciplineOrder[1]
-    selectedRegion = data.region or false
-    local disc = Config.Disciplines[currentDiscipline]
-
-    local options = {
-        {
-            title = ('%s — Nivel %s'):format(data.name, data.level),
-            description = ('XP: %s / %s  |  Banco: $%s'):format(data.xp, data.nextXp, data.money),
-            icon = 'user',
-            disabled = true,
-        },
-    }
-
-    -- seletor de FRENTE (so aparece se houver mais de uma)
-    if #Config.DisciplineOrder > 1 and data.isOwner then
-        for _, dId in ipairs(Config.DisciplineOrder) do
-            local d = Config.Disciplines[dId]
-            local locked = data.level < (d.minLevel or 0)
-            local cur = currentDiscipline == dId
-            options[#options + 1] = {
-                title = (cur and '➤ ' or '') .. 'Frente: ' .. d.label,
-                description = locked and ('Nivel min: ' .. d.minLevel) or 'Selecionar esta frente',
-                icon = d.icon or 'briefcase',
-                disabled = locked or cur,
-                onSelect = function()
-                    TriggerServerEvent('vp_cityworks:selectDiscipline', dId)
-                    Wait(150)
-                    OpenMenu()
-                end,
-            }
-        end
-    end
-
-    -- regioes da frente ativa
-    for _, region in ipairs(disc.regions) do
-        local locked = data.level < region.minLevel
-        local sel = selectedRegion and selectedRegion.key == region.key
-        options[#options + 1] = {
-            title = (sel and '✓ ' or '') .. region.title,
-            description = ('Recompensa: $%s + %s XP  |  Nivel min: %s')
-                :format(region.awards.money, region.awards.xp, region.minLevel),
-            icon = 'location-dot',
-            disabled = locked,
-            onSelect = function()
-                TriggerServerEvent('vp_cityworks:selectMission', region.key)
-                Wait(150)
-                OpenMenu()
-            end,
-        }
-    end
-
-    -- convidar
-    options[#options + 1] = {
-        title = 'Convidar jogador',
-        icon = 'user-plus',
-        onSelect = function()
-            local input = lib.inputDialog('Convidar', { { type = 'number', label = 'ID do jogador', required = true } })
-            if input and input[1] then
-                TriggerServerEvent('vp_cityworks:invite', input[1])
-            end
-        end,
-    }
-
-    -- dividir recompensa (boss split) - so dono, com 2+ membros
-    local memberCids = {}
-    for c in pairs(lobbyPlayers) do memberCids[#memberCids + 1] = c end
-    if Config.BossRewardSplit and data.isOwner and #memberCids > 1 then
-        options[#options + 1] = {
-            title = 'Dividir recompensa',
-            icon = 'percent',
-            description = 'Defina a % de pagamento de cada membro',
-            onSelect = function()
-                local fields, def = {}, math.floor(100 / #memberCids)
-                for _, c in ipairs(memberCids) do
-                    fields[#fields + 1] = {
-                        type = 'number', label = (lobbyPlayers[c].name or c) .. ' (%)',
-                        default = def, min = 0, max = 100,
-                    }
-                end
-                local input = lib.inputDialog('Dividir recompensa', fields)
-                if input then
-                    local split = {}
-                    for i, c in ipairs(memberCids) do split[c] = tonumber(input[i]) or 0 end
-                    TriggerServerEvent('vp_cityworks:setRewardSplit', split)
-                end
-            end,
-        }
-    end
-
-    -- iniciar / resetar
-    options[#options + 1] = {
-        title = selectedRegion and 'INICIAR TRABALHO' or 'Selecione uma regiao',
-        icon = 'play',
-        disabled = not selectedRegion,
-        onSelect = function() StartJobCheck() end,
-    }
-
-    lib.registerContext({ id = 'vp_cityworks_menu', title = 'Secretaria de Obras', options = options })
-    lib.showContext('vp_cityworks_menu')
+    if not fetchAndSend('OPEN_MENU') then return end
+    menuOpen = true
+    SetNuiFocus(true, true)
 end
 
 function StartJobCheck()
-    if not selectedRegion then return end
-    -- check client-side: zona de spawn livre (server revalida via spawn setter)
-    TriggerServerEvent('vp_cityworks:startJob')
+    TriggerServerEvent('vp_cityworks:startJob') -- server revalida regiao/nivel/zona
 end
+
+-- callbacks do NUI do menu (o refreshLobby do server atualiza o menu ao vivo)
+RegisterNUICallback('menuDiscipline', function(d, cb) TriggerServerEvent('vp_cityworks:selectDiscipline', d.id); cb('ok') end)
+RegisterNUICallback('menuMission', function(d, cb) TriggerServerEvent('vp_cityworks:selectMission', d.key); cb('ok') end)
+RegisterNUICallback('menuInvite', function(d, cb) if d.id then TriggerServerEvent('vp_cityworks:invite', d.id) end; cb('ok') end)
+RegisterNUICallback('menuKick', function(d, cb) if d.cid then TriggerServerEvent('vp_cityworks:kickPlayer', d.cid) end; cb('ok') end)
+RegisterNUICallback('menuSplit', function(d, cb) if type(d.split) == 'table' then TriggerServerEvent('vp_cityworks:setRewardSplit', d.split) end; cb('ok') end)
+RegisterNUICallback('menuStart', function(d, cb) closeMenu(); StartJobCheck(); cb('ok') end)
+RegisterNUICallback('menuClose', function(d, cb) menuOpen = false; SetNuiFocus(false, false); cb('ok') end)
 
 ---------------------------------------------------------------------
 -- EVENTOS DE LOBBY
@@ -186,6 +146,7 @@ RegisterNetEvent('vp_cityworks:refreshLobby', function(players, disciplineId, re
     lobbyPlayers = players or {}
     currentDiscipline = disciplineId or currentDiscipline
     selectedRegion = region or false
+    if menuOpen then fetchAndSend('MENU_UPDATE') end -- atualiza o menu ao vivo
 end)
 
 RegisterNetEvent('vp_cityworks:receiveInvite', function(hostName, hostCid)
@@ -203,6 +164,7 @@ end)
 RegisterNetEvent('vp_cityworks:leftLobby', function()
     selectedRegion = false
     lobbyPlayers = {}
+    closeMenu()
 end)
 
 RegisterNetEvent('vp_cityworks:rewardScreen', function(info)

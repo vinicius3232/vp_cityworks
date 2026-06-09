@@ -330,6 +330,9 @@ window.addEventListener('message', (ev) => {
         case 'HUD_HIDE':     $('hud').classList.add('hidden'); break;
         case 'REWARD':       showReward(d.data); break;
         case 'SFX':          if (d.play) sfxStart(d.sfx); else sfxStop(); break;
+        case 'OPEN_MENU':    openMenu(d.data); break;
+        case 'MENU_UPDATE':  if (menuState) renderMenu(d.data); break;
+        case 'CLOSE_MENU':   closeMenu(); break;
     }
 });
 
@@ -370,6 +373,96 @@ function showReward(data) {
     if (rewardTimer) clearTimeout(rewardTimer);
     rewardTimer = setTimeout(() => $('reward').classList.add('hidden'), 6000);
 }
+
+/* ============================================================
+   MENU principal (Secretaria de Obras)
+============================================================ */
+let menuState = null;
+function openMenu(data) { renderMenu(data); $('menu').classList.remove('hidden'); }
+function closeMenu() {
+    menuState = null;
+    $('menu').classList.add('hidden');
+    $('menu-split-box').classList.add('hidden');
+    $('menu-split-box').innerHTML = '';
+}
+function renderMenu(data) {
+    menuState = data;
+    $('menu-name').textContent = data.name || '—';
+    $('menu-lvl').textContent = 'Nv ' + (data.level || 1);
+    $('menu-money').textContent = '$' + Number(data.money || 0).toLocaleString('pt-BR');
+    $('menu-xp-bar').style.width = Math.min(100, ((data.xp || 0) / (data.nextXp || 1)) * 100) + '%';
+
+    const dc = $('menu-disciplines'); dc.innerHTML = '';
+    (data.disciplines || []).forEach(di => {
+        const el = document.createElement('div');
+        el.className = 'disc-chip' + (di.id === data.currentDiscipline ? ' active' : '') + (di.locked ? ' locked' : '');
+        el.textContent = di.label;
+        if (!di.locked && di.id !== data.currentDiscipline) el.onclick = () => post('menuDiscipline', { id: di.id });
+        dc.appendChild(el);
+    });
+
+    const rc = $('menu-regions'); rc.innerHTML = '';
+    (data.regions || []).forEach(r => {
+        const el = document.createElement('div');
+        el.className = 'region-card' + (r.selected ? ' selected' : '') + (r.locked ? ' locked' : '');
+        el.innerHTML = `<div class="rc-title">${r.title}</div><div class="rc-info">` +
+            `<span class="rc-money">$${Number(r.money).toLocaleString('pt-BR')}</span>` +
+            `<span class="rc-xp">${r.xp} XP</span><span class="rc-lvl">Nv ${r.minLevel}</span></div>`;
+        if (!r.locked) el.onclick = () => post('menuMission', { key: r.key });
+        rc.appendChild(el);
+    });
+
+    const players = data.players || [];
+    $('menu-team-count').textContent = '(' + players.length + '/' + (data.maxPlayers || 4) + ')';
+    const pl = $('menu-players'); pl.innerHTML = '';
+    players.forEach(p => {
+        const el = document.createElement('div'); el.className = 'player-row';
+        el.innerHTML = `<span>${p.name} <span class="pr-owner">${p.owner ? '(dono)' : ''}</span></span>` +
+            ((data.isOwner && !p.owner) ? `<span class="pr-kick" data-cid="${p.cid}">✕</span>` : '');
+        pl.appendChild(el);
+    });
+    pl.querySelectorAll('.pr-kick').forEach(k => k.onclick = () => post('menuKick', { cid: k.dataset.cid }));
+
+    $('menu-split').style.display = (data.bossSplit && data.isOwner && players.length > 1) ? 'inline-block' : 'none';
+    $('menu-invite').style.display = data.isOwner ? 'inline-block' : 'none';
+    $('menu-invite-id').style.display = data.isOwner ? 'inline-block' : 'none';
+
+    const start = $('menu-start');
+    start.disabled = !data.selectedRegion;
+    start.textContent = data.selectedRegion ? 'INICIAR TRABALHO' : 'SELECIONE UM CONTRATO';
+}
+function toggleSplitBox() {
+    const box = $('menu-split-box');
+    if (!box.classList.contains('hidden')) { box.classList.add('hidden'); box.innerHTML = ''; return; }
+    const players = (menuState && menuState.players) || [];
+    if (players.length < 2) return;
+    const def = Math.floor(100 / players.length);
+    box.innerHTML = '';
+    players.forEach(p => {
+        const row = document.createElement('div'); row.className = 'split-row';
+        row.innerHTML = `<span>${p.name}</span><input type="number" min="0" max="100" value="${def}" data-cid="${p.cid}"/>`;
+        box.appendChild(row);
+    });
+    const btn = document.createElement('button'); btn.className = 'menu-btn ghost'; btn.textContent = 'Salvar divisão';
+    btn.onclick = () => {
+        const split = {};
+        box.querySelectorAll('input').forEach(i => { split[i.dataset.cid] = parseInt(i.value) || 0; });
+        post('menuSplit', { split: split });
+        box.classList.add('hidden');
+    };
+    box.appendChild(btn);
+    box.classList.remove('hidden');
+}
+$('menu-close').onclick = () => { closeMenu(); post('menuClose'); };
+$('menu-start').onclick = () => { if (menuState && menuState.selectedRegion) post('menuStart'); };
+$('menu-invite').onclick = () => {
+    const id = parseInt($('menu-invite-id').value);
+    if (id) { post('menuInvite', { id: id }); $('menu-invite-id').value = ''; }
+};
+$('menu-split').onclick = () => toggleSplitBox();
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && menuState) { closeMenu(); post('menuClose'); }
+});
 
 // delegacao de eventos do painel
 $('panel-grid').addEventListener('mousemove', (e) => {

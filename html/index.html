@@ -87,6 +87,42 @@
         </div>
     </div>
 
+    <!-- ---------- MENU principal (Secretaria de Obras) ---------- -->
+    <div id="menu" class="menu hidden">
+        <div class="menu-card">
+            <header class="menu-head">
+                <div class="menu-title">SECRETARIA DE OBRAS</div>
+                <div class="menu-profile">
+                    <span id="menu-name">—</span>
+                    <span id="menu-lvl" class="chip">Nv 1</span>
+                    <span id="menu-money" class="chip money">$0</span>
+                    <div class="menu-xp"><div id="menu-xp-bar"></div></div>
+                </div>
+                <div class="menu-close" id="menu-close">✕</div>
+            </header>
+
+            <div class="menu-section-label">FRENTE DE TRABALHO</div>
+            <div id="menu-disciplines" class="menu-disciplines"></div>
+
+            <div class="menu-section-label">CONTRATOS</div>
+            <div id="menu-regions" class="menu-regions"></div>
+
+            <div class="menu-bottom">
+                <div class="menu-team">
+                    <div class="menu-section-label">EQUIPE <span id="menu-team-count"></span></div>
+                    <div id="menu-players" class="menu-players"></div>
+                    <div class="menu-team-actions">
+                        <input id="menu-invite-id" class="menu-input" type="number" placeholder="ID p/ convidar" />
+                        <button id="menu-invite" class="menu-btn ghost">Convidar</button>
+                        <button id="menu-split" class="menu-btn ghost" style="display:none">Dividir $</button>
+                    </div>
+                    <div id="menu-split-box" class="menu-split-box hidden"></div>
+                </div>
+                <button id="menu-start" class="menu-btn start" disabled>SELECIONE UM CONTRATO</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ---------- HUD ao vivo (sem foco) ---------- -->
     <div id="hud" class="hud hidden">
         <div class="hud-card">

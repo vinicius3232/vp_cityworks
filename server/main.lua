@@ -103,6 +103,8 @@ lib.callback.register('vp_cityworks:getProfile', function(src)
         disciplineId = lobby.disciplineId,
         region = lobby.region,
         isOwner = (lobby.owner == cid),
+        ownerCid = lobby.owner,
+        maxPlayers = Config.MaxPlayersPerLobby,
     }
 end)
 
