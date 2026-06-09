@@ -13,7 +13,7 @@ Empresa de manutenção da cidade para **QBox** (nativo ox_lib/ox_inventory/ox_t
 ## Instalação
 1. Importe `sql/migration.sql` (tabela `vp_cityworks`).
 2. O grupo `[standalone]` já é `ensure`d — **não** duplique. Para forçar: `ensure vp_cityworks`.
-3. ⚠️ **Desabilite o `vp_electrician` antigo** (este resource o substitui; senão duplica NPC/tabela).
+3. ⚠️ **Substitui o `vp_electrician`** — não rode os dois juntos (duplica NPC/tabela). No servidor de dev a pasta antiga já foi removida.
 4. (Opcional) log Discord por convar: `set vp_cityworks_webhook "https://discord.com/api/webhooks/..."`
 5. (Opcional) pt-BR: `setr ox:locale pt-br`.
 
@@ -40,6 +40,7 @@ entrega o veículo no depot → **recompensa** (dinheiro dividido + XP, multipli
 | 4 | Frente Guincho (`tow`) | ✅ |
 | 5 | Dispatch sob demanda | ✅ |
 | 6 | Docs + precheck (eventos/callbacks/locales casados, manifest, balance) | ✅ |
+| 🔍 | Auditoria 4 dimensões: **0 críticos, 0 altos** (perf otimizada, segurança/DB ok) | ✅ |
 
 ## Ajuste in-game pendente (física/mundo)
 - "Pegada" do **lift** e offset do **attach do flatbed** (guincho).

@@ -173,7 +173,17 @@ O resto (lógica, eventos, NUI) está verificado: eventos client↔server casado
 
 ---
 
-## 12. Troubleshooting
+## 12. Auditoria (4 dimensões)
+
+Última auditoria: **0 críticos, 0 altos**.
+- **Performance**: sem loop sem `Wait()`, sem `PlayerPedId()` em loop (`cache.ped`), sem `GetGamePool`/`GetDistanceBetweenCoords`, Waits adaptativos (`Wait(sleep)`), threads dormem 1000ms idle. Semáforo com **entidade cacheada + throttle 250ms**; seta vermelha raio 35m. Resmon: idle ~0.00–0.01ms, job ativo ~0.01–0.02ms.
+- **Segurança**: 19/19 eventos validam source (`canAct` + guards de tipo + `isNear`), anti-skip (`minSeconds`), anti pagamento-duplo, gate de nível server-side, anti convite-spoof, log de suspeitos. *Limitação conhecida:* resultado de minigame é client-side (mitigado por minSeconds+proximity+lock).
+- **Qualidade**: `lib.notify`/`progressBar`/`callback`/`skillCheck`, `ox_target`, config separado, i18n 52/52 (pt-br=en).
+- **DB**: 100% parametrizado (`?`), PK em `citizenid`, colunas específicas, `.await` em coroutine.
+
+---
+
+## 13. Troubleshooting
 
 | Sintoma | Causa provável |
 |---------|----------------|
