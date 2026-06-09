@@ -214,11 +214,21 @@ CreateThread(function()
                 if not target.fixed then
                     local dist = #(pc - target.coords)
                     local radius = (ActiveDiscipline and ActiveDiscipline.targetRadius[target.type]) or 3.0
-                    -- seta vermelha alta (visivel de longe)
-                    if Config.RedArrowMarker and dist < 35.0 then
+                    -- seta alta + halo pulsante no chao (visivel de longe)
+                    if Config.RedArrowMarker and dist < 40.0 then
                         sleep = 0
-                        DrawMarker(0, target.coords.x, target.coords.y, target.coords.z + 2.4,
-                            0,0,0, 0,0,0, 1.2,1.2,1.2, 220,30,30,200, true,true,2,nil,nil,false)
+                        local mk = Config.Marker or {}
+                        local ar = mk.arrow or { 235, 64, 52 }
+                        local rg = mk.ring or { 255, 207, 36 }
+                        local pulse = 0.5 + 0.5 * math.sin(GetGameTimer() / 260)
+                        -- halo pulsante no chao
+                        DrawMarker(1, target.coords.x, target.coords.y, target.coords.z - 0.95,
+                            0,0,0, 0,0,0, 1.3 + pulse * 0.35, 1.3 + pulse * 0.35, 0.5,
+                            rg[1], rg[2], rg[3], math.floor(70 + pulse * 70), false, false, 2, nil, nil, false)
+                        -- seta alta (bob nativo) com alpha pulsante
+                        DrawMarker(0, target.coords.x, target.coords.y, target.coords.z + 2.3,
+                            0,0,0, 0,0,0, 1.0 + pulse * 0.2, 1.0 + pulse * 0.2, 1.0 + pulse * 0.2,
+                            ar[1], ar[2], ar[3], math.floor(150 + pulse * 90), true, true, 2, nil, nil, false)
                     end
                     -- semaforo defeituoso pisca (entidade cacheada + throttle 250ms)
                     if target.type == 'fixTrafficLamp' and dist < 30.0 then
@@ -240,8 +250,11 @@ CreateThread(function()
                     if dist < 20.0 then
                         sleep = 0
                         if mode == 'minigame' then startSmoke(id, target.coords) end
-                        DrawMarker(2, target.coords.x, target.coords.y, target.coords.z + 1.0,
-                            0,0,0, 0,0,0, 0.5,0.5,0.5, 0,255,0,180, false,false,2,nil,nil,false)
+                        local nr = (Config.Marker and Config.Marker.near) or { 45, 255, 66 }
+                        local p2 = 0.5 + 0.5 * math.sin(GetGameTimer() / 220)
+                        DrawMarker(2, target.coords.x, target.coords.y, target.coords.z + 1.0 + p2 * 0.1,
+                            0,0,0, 0,0,0, 0.45 + p2 * 0.15, 0.45 + p2 * 0.15, 0.45 + p2 * 0.15,
+                            nr[1], nr[2], nr[3], math.floor(140 + p2 * 80), false, false, 2, nil, nil, false)
                         if dist < radius then
                             if mode == 'drill' then
                                 -- alvo com vida: bater ate zerar

@@ -37,9 +37,13 @@ CreateThread(function()
     lib.requestModel(Config.Interaction.pedModel)
     local c = Config.Interaction.coords
     local ped = CreatePed(0, Config.Interaction.pedModel, c.x, c.y, c.z - 1.0, c.w, false, false)
-    FreezeEntityPosition(ped, true)
     SetEntityInvincible(ped, true)
     SetBlockingOfNonTemporaryEvents(ped, true)
+    FreezeEntityPosition(ped, true)
+    -- capataz "vivo": toca um cenario no lugar (prancheta) se configurado
+    if Config.Interaction.scenario then
+        TaskStartScenarioInPlace(ped, Config.Interaction.scenario, 0, true)
+    end
     SetModelAsNoLongerNeeded(Config.Interaction.pedModel)
     pedSpawned = true
 
@@ -47,7 +51,7 @@ CreateThread(function()
     exports.ox_target:addLocalEntity(ped, {
         {
             name = 'vp_cityworks_open',
-            icon = 'fas fa-bolt',
+            icon = 'fas fa-helmet-safety',
             label = locale('open_menu'),
             distance = Config.Interaction.targetDistance,
             onSelect = function() OpenMenu() end,

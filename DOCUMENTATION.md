@@ -159,7 +159,8 @@ O servidor é a única fonte de verdade. **Nunca confia** em coords/identificado
 | `VehicleDeposit` / `RequiredItem` / `RewardItems` / `BossRewardSplit` | economia |
 | `Dispatch` | serviço sob demanda (command, fee, disciplines) |
 | `Equipment` | escada/lift |
-| `WorkClothes` / `RedArrowMarker` | cloakroom / seta |
+| `WorkClothes` / `RedArrowMarker` / `Marker` | cloakroom / seta / cores dos marcadores |
+| `Interaction.scenario` | animação do NPC capataz (prancheta) |
 | `Minigames.failDamage` / `minSeconds` / `panelMaxWrong` | dano / anti-skip / tentativas no voltímetro |
 | `ExternalMinigames` | ponte opcional p/ libs externas (bl_ui/glitch) por export |
 | `TowerWear` | desgaste opcional das torres do `vp_towers` |

@@ -15,6 +15,7 @@ Config.Debug = false
 Config.Interaction = {
     coords   = vec4(528.77, -1603.26, 29.34, 46.59),
     pedModel = `s_m_y_construct_01`,
+    scenario = 'WORLD_HUMAN_CLIPBOARD', -- anima o capataz (prancheta); nil = so congelado
     blip     = { enable = true, sprite = 566, color = 47, scale = 0.8, label = 'Secretaria de Obras' },
     targetDistance = 2.0,
 }
@@ -80,6 +81,12 @@ Config.WorkClothes = { enable = true }
 
 -- Seta vermelha alta sobre os alvos (visivel de longe).
 Config.RedArrowMarker = true
+-- Cores (RGB) dos marcadores de alvo (animados: halo pulsa, seta com bob).
+Config.Marker = {
+    arrow = { 235, 64, 52 },   -- seta alta = "vai aqui"
+    ring  = { 255, 207, 36 },  -- halo pulsante no chao
+    near  = { 45, 255, 66 },   -- marcador de interacao (perto)
+}
 
 ---------------------------------------------------------------------
 -- MINIGAMES (compartilhado: dano + anti-skip). O mapeamento por tarefa
