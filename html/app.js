@@ -278,6 +278,12 @@ function openPanel(s) {
     for (let i = 0; i < count; i++) {
         const cell = document.createElement('div');
         cell.className = 'pano'; cell.dataset.i = i;
+        if (s.image) { // hook: foto propria/livre no disjuntor
+            cell.classList.add('img');
+            cell.style.backgroundImage = `url("${s.image}")`;
+        } else { // disjuntor desenhado (terminal -> chave OFF -> terminal)
+            cell.innerHTML = '<span class="brk-screw"></span><span class="brk-sw"></span><span class="brk-screw"></span>';
+        }
         grid.appendChild(cell);
     }
     $('panel-service').classList.add('hidden');
@@ -452,6 +458,9 @@ function hammerKey(e) {
         hammer.done++;
         $('hammer-progress').textContent = `${hammer.done} / ${hammer.total}`;
         $('hammer-nail').style.transform = `translateX(-50%) translateY(${Math.round(hammer.done / hammer.total * 44)}px)`;
+        // faiscas no impacto (reusa o spawner da solda)
+        const nr = $('hammer-nail').getBoundingClientRect();
+        weldSparks(nr.left + nr.width / 2, nr.top);
         if (hammer.done >= hammer.total) { hammer.key = null; sndConnect(); return setTimeout(() => finish(true), 200); }
         setTimeout(hammerNextKey, 150);
     } else {

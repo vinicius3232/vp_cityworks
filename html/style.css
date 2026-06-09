@@ -129,27 +129,32 @@ html, body {
     background: linear-gradient(160deg, #243027, #151d18);
     border: 2px solid #0c0d10; box-shadow: inset 0 0 26px rgba(0,0,0,.6);
 }
-/* disjuntor (breaker) branco com alavanca + parafuso */
+/* disjuntor (breaker MCCB) branco: terminal -> chave OFF -> terminal */
 .pano {
-    height: 5.4vw; border-radius: 5px; position: relative; cursor: crosshair; overflow: hidden;
-    background:
-        linear-gradient(180deg, #34373c 0 14%, rgba(0,0,0,0) 14% 86%, #34373c 86% 100%),
-        linear-gradient(180deg, #f2f1ec, #c9c8c0);
-    border: 1px solid #93918a; box-shadow: 0 1px 2px rgba(0,0,0,.5);
+    height: 5.8vw; border-radius: 5px; position: relative; cursor: crosshair; overflow: hidden;
+    display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+    padding: .45vw 0;
+    background: linear-gradient(180deg, #fcfcf9 0%, #ecebe5 52%, #dad9d2 100%);
+    border: 1px solid #b3b1a8; box-shadow: 0 1px 2px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.75);
     transition: filter .1s, box-shadow .1s;
 }
-.pano::before { /* alavanca do disjuntor */
-    content: ''; position: absolute; left: 50%; top: 38%; transform: translateX(-50%);
-    width: 1.3vw; height: 1.7vw; border-radius: 3px;
-    background: linear-gradient(180deg, #2a2d33, #101113); border: 1px solid #0c0d10;
-    box-shadow: inset 0 .25vw 0 rgba(255,255,255,.1), 0 .15vw .3vw rgba(0,0,0,.5);
+/* parafusos de terminal (Line em cima, Load embaixo) */
+.brk-screw {
+    width: .85vw; height: .85vw; border-radius: 50%; flex: 0 0 auto; position: relative;
+    background: radial-gradient(circle at 34% 30%, #d3d6da, #6a6d72 70%); border: 1px solid #4a4d52;
 }
-.pano::after { /* parafuso no terminal superior */
-    content: ''; position: absolute; left: 50%; top: .45vw; transform: translateX(-50%);
-    width: .7vw; height: .7vw; border-radius: 50%;
-    background: radial-gradient(circle at 35% 30%, #b9bcc2, #5a5d63 70%); border: 1px solid #2a2d33;
+.brk-screw::after { content: ''; position: absolute; inset: 30%; background: #34373c; border-radius: 1px; transform: rotate(38deg); }
+/* janela com a chave (OFF) */
+.brk-sw {
+    width: 1.6vw; height: 2vw; border-radius: 3px; position: relative;
+    background: linear-gradient(180deg, #2c2f35, #101316);
+    border: 1px solid #0c0d10; box-shadow: inset 0 .32vw 0 rgba(255,255,255,.09), inset 0 -.2vw .25vw rgba(0,0,0,.6);
 }
-.pano:hover { filter: brightness(1.05); box-shadow: 0 0 0 2px #ffcf24, 0 1px 2px rgba(0,0,0,.5); }
+.brk-sw::after { content: 'OFF'; position: absolute; top: .12vw; left: 0; right: 0; text-align: center; font-size: .42vw; font-weight: 800; letter-spacing: .4px; color: #ff5a5a; }
+.pano:hover { filter: brightness(1.04); box-shadow: 0 0 0 2px #ffcf24, 0 1px 2px rgba(0,0,0,.45); }
+/* hook opcional: usar uma FOTO no disjuntor (settings.image) */
+.pano.img { background-size: cover; background-position: center; padding: 0; }
+.pano.img > * { display: none; }
 .volt-read.low  { color: #ff4545; }
 .volt-read.high { color: #2dff42; }
 
@@ -257,11 +262,12 @@ html, body {
     border: 2px solid #15171a; box-shadow: inset 0 0 26px rgba(0,0,0,.5);
 }
 .hammer-tool {
-    position: absolute; top: 1vw; left: 50%; font-size: 5.5vw; line-height: 1;
-    transform: translateX(-22%) rotate(-14deg); transform-origin: 78% 88%;
-    transition: transform .1s ease-in; filter: drop-shadow(0 6px 10px rgba(0,0,0,.55));
+    position: absolute; top: .6vw; left: 50%; width: 7.5vw; height: auto;
+    transform: translateX(-26%) rotate(-16deg); transform-origin: 74% 86%;
+    transition: transform .1s ease-in; filter: drop-shadow(0 6px 9px rgba(0,0,0,.55));
 }
-.hammer-tool.swing { transform: translateX(-22%) rotate(42deg); transition: transform .06s ease-out; }
+.hammer-tool svg { width: 100%; height: auto; display: block; }
+.hammer-tool.swing { transform: translateX(-26%) rotate(40deg); transition: transform .06s ease-out; }
 .hammer-beam {
     position: relative; width: 58%; height: 3.4vw; margin-bottom: 2.2vw; border-radius: 4px;
     background: repeating-linear-gradient(90deg, #7a4a23 0 16px, #6a3e1c 16px 32px), linear-gradient(#8a5a2c, #6a3e1c);
