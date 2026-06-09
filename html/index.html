@@ -12,19 +12,21 @@
          Resultado unificado: POST minigameResult { success }.
     ============================================================= -->
 
-    <!-- ---------- 1) SOLDA (fixStreetLamp / phonePole) ---------- -->
+    <!-- ---------- 1) SOLDA (fixStreetLamp / phonePole) — tracar a trinca ---------- -->
     <div id="weld" class="mg hidden">
-        <div class="cabinet">
-            <header class="cab-header">
-                <span class="cab-title">SOLDA DE CABOS</span>
+        <div class="weld-stage">
+            <header class="weld-bar">
+                <span class="cab-title">SOLDA DE TRINCA</span>
                 <div class="cab-meta">
                     <span id="weld-fails" class="fails"></span>
                     <span id="weld-timer" class="timer">00:00</span>
                 </div>
             </header>
-            <p class="cab-hint">Arraste a solda de um terminal ao terminal <b>oposto</b> de cada fio. Sair da trilha = falha.</p>
-            <div id="weld-rows" class="rows"></div>
-            <footer class="cab-footer">
+            <p class="weld-hint">Segure e arraste o <b>maçarico</b> sobre a trinca, do ponto vermelho até o fim, sem sair da linha.</p>
+            <div class="weld-panel">
+                <svg id="weld-svg" class="weld-svg" viewBox="0 0 600 360" preserveAspectRatio="none"></svg>
+            </div>
+            <footer class="weld-foot">
                 <span id="weld-progress" class="progress">0 / 0</span>
                 <span class="esc">ESC para sair</span>
             </footer>

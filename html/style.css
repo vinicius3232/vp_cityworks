@@ -62,28 +62,54 @@ html, body {
 .esc { opacity: .55; letter-spacing: 1px; }
 
 /* ============================================================
-   1) SOLDA
+   1) SOLDA — tracar a trinca (painel rachado + macarico)
 ============================================================ */
-.rows { display: flex; flex-direction: column; gap: 1.1vw; }
-.wire { position: relative; display: flex; align-items: center; height: 2.4vw; }
-.wire .core {
-    flex: 1; height: .55vw; margin: 0 .2vw; border-radius: 4px;
-    background: var(--dim); transition: background .15s;
+.weld-stage {
+    width: 48vw; max-width: 780px;
+    background: linear-gradient(160deg, #2b2f36 0%, #1c1f24 100%);
+    border: 2px solid #0c0d10; border-radius: 10px;
+    box-shadow: 0 0 0 6px rgba(0,0,0,.35), 0 24px 60px rgba(0,0,0,.6);
+    padding: 1.1vw 1.3vw; color: #e7e9ec;
 }
-.wire.wired .core { background: var(--bright); box-shadow: 0 0 14px var(--glow); }
-.terminal {
-    width: 2.4vw; height: 2.4vw; border-radius: 6px;
-    background: radial-gradient(circle at 35% 30%, #6a6f78, #2a2d33 70%);
-    border: 2px solid #0c0d10; box-shadow: inset 0 0 6px rgba(0,0,0,.6);
-    cursor: pointer; position: relative;
-}
-.terminal::after {
-    content: ''; position: absolute; inset: 32%; border-radius: 50%;
-    background: var(--bright); opacity: .55;
-}
-.wire.wired .terminal::after { opacity: 1; box-shadow: 0 0 10px var(--glow); }
-.terminal:hover { filter: brightness(1.25); }
+.weld-bar, .weld-foot { display: flex; align-items: center; justify-content: space-between; }
+.weld-bar { border-bottom: 1px solid rgba(255,255,255,.08); padding-bottom: .6vw; }
+.weld-hint { font-size: .8vw; opacity: .72; margin: .7vw 0; }
+.weld-hint b { color: #ff7b00; }
+.weld-foot { border-top: 1px solid rgba(255,255,255,.08); padding-top: .6vw; margin-top: .6vw; font-size: .85vw; }
 
+/* painel/parede rachada (claro, igual a referencia) */
+.weld-panel {
+    position: relative; width: 100%; aspect-ratio: 600 / 360;
+    border-radius: 8px; overflow: hidden; cursor: crosshair;
+    border: 2px solid #15171a; box-shadow: inset 0 0 34px rgba(0,0,0,.28);
+    background:
+        repeating-linear-gradient(116deg, rgba(0,0,0,.035) 0 7px, transparent 7px 16px),
+        radial-gradient(120% 90% at 30% 20%, #e2e0d9 0%, #cbc9c1 55%, #b6b4ab 100%);
+}
+.weld-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+/* sulco da trinca a soldar */
+.weld-base { fill: none; stroke: #2a2b2f; stroke-width: 11; stroke-linecap: round; stroke-linejoin: round; opacity: .9; }
+/* metal derretido preenchendo */
+.weld-fill {
+    fill: none; stroke: url(#wfill); stroke-width: 10; stroke-linecap: round; stroke-linejoin: round;
+    filter: drop-shadow(0 0 5px #ff7b00) drop-shadow(0 0 11px rgba(255,60,0,.55));
+}
+.weld-fill.done { filter: drop-shadow(0 0 7px #ffcf24) drop-shadow(0 0 15px rgba(255,160,0,.6)); }
+/* avisa quando sai da linha (esfriando) */
+.weld-svg.warn .weld-base { stroke: #ff4545; }
+/* pontos inicial/final */
+.weld-node.start { fill: #ff3b30; stroke: #5a0f0a; stroke-width: 2; filter: drop-shadow(0 0 5px rgba(255,59,48,.85)); }
+.weld-node.end   { fill: #6a6f78; stroke: #0c0d10; stroke-width: 2; }
+
+/* faiscas */
+.spark {
+    position: fixed; width: 5px; height: 5px; border-radius: 50%; pointer-events: none; z-index: 60;
+    background: #ffe27a; box-shadow: 0 0 6px 2px #ff8c00; transform: translate(-50%, -50%);
+    animation: sparkFly .46s ease-out forwards;
+}
+@keyframes sparkFly { to { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(.2); opacity: 0; } }
+
+/* macarico (segue o mouse) */
 .torch {
     position: fixed; width: 26px; height: 26px; pointer-events: none;
     transform: translate(-50%, -50%); border-radius: 50%;

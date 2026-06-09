@@ -94,67 +94,165 @@ function finish(success) {
 }
 
 /* ============================================================
-   1) SOLDA
+   1) SOLDA — tracar a trinca com o macarico (estilo realista)
+   Segure e arraste o macarico sobre a linha em zigue-zague: a solda
+   derrete/preenche atras com brilho + faiscas. Sair da linha esfria.
 ============================================================ */
-let weld = null, currentWeld = null;
+let weld = null;
+const WELD = { TOL: 26, STEP: 48, OFF_MAX: 20, GRAB: 48, W: 600, H: 360 };
 
 function openWeld(s) {
     active = 'weld';
-    weld = { total: s.wireCount || 4, wired: 0, attemptsLeft: s.maxFails || 3, timeLeft: s.time || 60, loop: null };
-    const rows = $('weld-rows'); rows.innerHTML = '';
-    for (let i = 0; i < weld.total; i++) {
-        const col = PALETTE[i % PALETTE.length];
-        const wire = document.createElement('div');
-        wire.className = 'wire';
-        wire.style.setProperty('--bright', col.c);
-        wire.style.setProperty('--dim', col.dim);
-        wire.style.setProperty('--glow', col.glow);
-        const left = document.createElement('div'); left.className = 'terminal left';
-        const core = document.createElement('div'); core.className = 'core';
-        const right = document.createElement('div'); right.className = 'terminal right';
-        left.addEventListener('mousedown', () => weldStart(wire, left));
-        right.addEventListener('mousedown', () => weldStart(wire, right));
-        left.addEventListener('mouseup', () => weldFinish(wire, left));
-        right.addEventListener('mouseup', () => weldFinish(wire, right));
-        wire.append(left, core, right);
-        rows.appendChild(wire);
-    }
+    weld = {
+        total: Math.max(1, s.wireCount || 3), done: 0,
+        attemptsLeft: s.maxFails || 3, timeLeft: s.time || 60,
+        loop: null, welding: false, pts: [], cum: [], len: 0, prog: 0, off: 0,
+    };
     weldFails(); weldProg();
     $('weld').classList.remove('hidden');
     weldTimer(weld.timeLeft);
+    weldNewSeam();
+    $('weld-svg').onmousedown = weldDown;
 }
-function weldStart(wire, term) {
-    if (!weld || currentWeld || wire.classList.contains('wired')) return;
-    currentWeld = { wire, term };
-    document.body.style.cursor = 'none';
+
+// gera uma trinca em zigue-zague (vertical, alternando lados)
+function weldNewSeam() {
+    const W = WELD.W, H = WELD.H;
+    const segs = 5 + Math.floor(Math.random() * 3); // 5-7 dobras
+    const cx = 210 + Math.random() * 180;
+    const pts = [];
+    for (let i = 0; i <= segs; i++) {
+        const y = 34 + (H - 68) * (i / segs);
+        const edge = (i === 0 || i === segs);
+        const dir = (i % 2 === 0) ? -1 : 1;
+        const off = edge ? (Math.random() * 30 - 15) : dir * (52 + Math.random() * 64);
+        pts.push({ x: cx + off, y });
+    }
+    const cum = [0]; let len = 0;
+    for (let i = 1; i < pts.length; i++) {
+        len += Math.hypot(pts[i].x - pts[i-1].x, pts[i].y - pts[i-1].y);
+        cum.push(len);
+    }
+    weld.pts = pts; weld.cum = cum; weld.len = len; weld.prog = 0; weld.off = 0;
+
+    const d = 'M ' + pts.map(p => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' L ');
+    const a = pts[0], b = pts[pts.length - 1];
+    $('weld-svg').classList.remove('warn');
+    $('weld-svg').innerHTML =
+        `<defs><linearGradient id="wfill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffe27a"/><stop offset=".5" stop-color="#ff7b00"/><stop offset="1" stop-color="#ff3b30"/>
+        </linearGradient></defs>
+        <path class="weld-base" d="${d}"/>
+        <path id="weld-fill" class="weld-fill" d=""/>
+        <circle class="weld-node start" cx="${a.x.toFixed(1)}" cy="${a.y.toFixed(1)}" r="9"/>
+        <circle class="weld-node end" cx="${b.x.toFixed(1)}" cy="${b.y.toFixed(1)}" r="9"/>`;
+}
+
+function weldSvgPoint(e) {
+    const r = $('weld-svg').getBoundingClientRect();
+    return { x: (e.clientX - r.left) / r.width * WELD.W, y: (e.clientY - r.top) / r.height * WELD.H };
+}
+function weldPointAt(arc) {
+    const { pts, cum } = weld;
+    for (let i = 1; i < cum.length; i++) {
+        if (arc <= cum[i]) {
+            const t = (arc - cum[i-1]) / ((cum[i] - cum[i-1]) || 1);
+            return { x: pts[i-1].x + (pts[i].x - pts[i-1].x) * t, y: pts[i-1].y + (pts[i].y - pts[i-1].y) * t };
+        }
+    }
+    return pts[pts.length - 1];
+}
+function weldProject(p) {
+    const { pts, cum } = weld;
+    let best = { arc: 0, dist: 1e9 };
+    for (let i = 1; i < pts.length; i++) {
+        const ax = pts[i-1].x, ay = pts[i-1].y, dx = pts[i].x - ax, dy = pts[i].y - ay;
+        const l2 = dx*dx + dy*dy || 1;
+        let t = ((p.x - ax) * dx + (p.y - ay) * dy) / l2; t = Math.max(0, Math.min(1, t));
+        const dist = Math.hypot(p.x - (ax + dx*t), p.y - (ay + dy*t));
+        if (dist < best.dist) best = { arc: cum[i-1] + t * Math.hypot(dx, dy), dist };
+    }
+    return best;
+}
+function weldDown(e) {
+    if (!weld || weld.welding) return;
+    const head = weldPointAt(weld.prog), p = weldSvgPoint(e);
+    if (Math.hypot(p.x - head.x, p.y - head.y) > WELD.GRAB) return; // tem de pegar do ponto atual
+    weld.welding = true;
     $('torch').classList.remove('hidden');
+    document.body.style.cursor = 'none';
     startWeldHum();
+    weldMove(e);
 }
-function weldFinish(wire, term) {
-    if (!currentWeld || currentWeld.wire !== wire) return;
-    const opposite = term !== currentWeld.term;
-    weldEndDrag();
-    if (opposite) {
-        wire.classList.add('wired'); sndConnect(); weld.wired++; weldProg();
-        if (weld.wired >= weld.total) finish(true);
-    } else weldFail();
+function weldMove(e) {
+    if (!weld || !weld.welding) return;
+    $('torch').style.left = e.clientX + 'px';
+    $('torch').style.top = e.clientY + 'px';
+    const pr = weldProject(weldSvgPoint(e));
+    if (pr.dist > WELD.TOL || pr.arc > weld.prog + WELD.STEP) { // fora da linha / pulou
+        weld.off++;
+        $('weld-svg').classList.add('warn');
+        if (weld.off >= WELD.OFF_MAX) weldStrayFail();
+        return;
+    }
+    $('weld-svg').classList.remove('warn');
+    weld.off = Math.max(0, weld.off - 1);
+    if (pr.arc > weld.prog) {
+        weld.prog = pr.arc;
+        weldDrawFill();
+        weldSparks(e.clientX, e.clientY);
+        sndTick();
+        if (weld.prog >= weld.len * 0.985) weldSeamDone();
+    }
 }
-function weldCancelFail() { if (!currentWeld) return; weldEndDrag(); weldFail(); }
+function weldDrawFill() {
+    const { pts, cum, prog } = weld;
+    let d = `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`;
+    for (let i = 1; i < cum.length; i++) {
+        if (cum[i] <= prog) { d += ` L ${pts[i].x.toFixed(1)} ${pts[i].y.toFixed(1)}`; }
+        else { const hp = weldPointAt(prog); d += ` L ${hp.x.toFixed(1)} ${hp.y.toFixed(1)}`; break; }
+    }
+    const f = $('weld-fill'); if (f) f.setAttribute('d', d);
+}
+function weldSeamDone() {
+    sndConnect();
+    const f = $('weld-fill'); if (f) f.classList.add('done');
+    weld.done++; weldProg();
+    weld.welding = false; weldEndDrag();
+    if (weld.done >= weld.total) return finish(true);
+    setTimeout(() => { if (active === 'weld') weldNewSeam(); }, 380);
+}
+function weldStrayFail() {
+    sndError(); weld.off = 0; weld.welding = false; weldEndDrag();
+    weld.attemptsLeft--; weldFails();
+    if (weld.attemptsLeft <= 0) return finish(false);
+    weld.prog = 0; weldDrawFill(); // recomeca a costura atual
+}
+function weldUp() {
+    if (!weld || !weld.welding) return;
+    weld.welding = false; weldEndDrag();
+}
 function weldEndDrag() {
-    currentWeld = null; document.body.style.cursor = 'default';
+    document.body.style.cursor = 'default';
     $('torch').classList.add('hidden'); stopWeldHum();
 }
-function weldFail() {
-    sndError(); weld.attemptsLeft--; weldFails();
-    if (weld.attemptsLeft <= 0) finish(false);
+function weldSparks(x, y) {
+    for (let i = 0; i < 3; i++) {
+        const s = document.createElement('div'); s.className = 'spark';
+        s.style.left = x + 'px'; s.style.top = y + 'px';
+        s.style.setProperty('--dx', (Math.random() * 44 - 22) + 'px');
+        s.style.setProperty('--dy', (Math.random() * 30 + 8) + 'px');
+        document.body.appendChild(s);
+        setTimeout(() => s.remove(), 460);
+    }
 }
 function weldFails() { $('weld-fails').textContent = '⬤ '.repeat(Math.max(0, weld.attemptsLeft)).trim(); }
-function weldProg() { $('weld-progress').textContent = `${weld.wired} / ${weld.total}`; }
+function weldProg() { $('weld-progress').textContent = `${weld.done} / ${weld.total}`; }
 function fmt(s) { const m = Math.floor(s / 60), x = s % 60; return `${String(m).padStart(2,'0')}:${String(x).padStart(2,'0')}`; }
 function weldTimer(sec) {
     const t = $('weld-timer'); t.textContent = fmt(sec); t.classList.remove('warn');
     weld.loop = setInterval(() => {
-        weld.timeLeft--; sndTick();
+        weld.timeLeft--;
         if (weld.timeLeft <= 0) { t.textContent = '00:00'; return finish(false); }
         t.textContent = fmt(weld.timeLeft);
         if (weld.timeLeft <= 10) t.classList.add('warn');
@@ -162,6 +260,7 @@ function weldTimer(sec) {
 }
 function weldCleanup() {
     if (weld && weld.loop) clearInterval(weld.loop);
+    document.querySelectorAll('.spark').forEach(s => s.remove());
     weldEndDrag(); weld = null;
 }
 
@@ -479,15 +578,10 @@ $('service-cover').addEventListener('click', panelCover);
 // arrastar fios + solda (mouse global)
 document.addEventListener('mousemove', (e) => {
     if (active === 'wiring') return wiringMove(e);
-    if (active === 'weld' && currentWeld) {
-        $('torch').style.left = e.clientX + 'px';
-        $('torch').style.top = e.clientY + 'px';
-        const r = currentWeld.wire.getBoundingClientRect(), m = 12;
-        if (e.clientX < r.left - m || e.clientX > r.right + m || e.clientY < r.top - m || e.clientY > r.bottom + m) weldCancelFail();
-    }
+    if (active === 'weld') return weldMove(e);
 });
 document.addEventListener('mouseup', (e) => {
     if (active === 'wiring') return wiringUp(e);
-    if (active === 'weld') setTimeout(() => { if (currentWeld) weldCancelFail(); }, 30);
+    if (active === 'weld') return weldUp(e);
 });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && active) finish(false); });
