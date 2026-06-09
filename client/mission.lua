@@ -319,6 +319,7 @@ end
 --- MODO DRILL: bate no alvo (progressbar). Servidor decrementa a vida.
 function DrillTarget(target)
     local d = (ActiveDiscipline and ActiveDiscipline.drill and ActiveDiscipline.drill[target.type]) or {}
+    SendNUIMessage({ action = 'SFX', sfx = 'drill', play = true })
     local ok = lib.progressBar({
         duration = d.hitTime or 1600,
         label = locale('drilling'),
@@ -326,6 +327,7 @@ function DrillTarget(target)
         disable = { move = true, car = true, combat = true },
         anim = { dict = 'melee@large_wpn@streamed_core', clip = 'ground_attack_on_spot' },
     })
+    SendNUIMessage({ action = 'SFX', play = false })
     if ok then TriggerServerEvent('vp_cityworks:hitTarget', target.id) end
 end
 
@@ -337,6 +339,7 @@ function BuildTask(target)
         return
     end
     local b = (ActiveDiscipline and ActiveDiscipline.build and ActiveDiscipline.build[target.type]) or {}
+    SendNUIMessage({ action = 'SFX', sfx = 'build', play = true })
     local ok = lib.progressBar({
         duration = b.time or 6000,
         label = locale('building'),
@@ -344,6 +347,7 @@ function BuildTask(target)
         disable = { move = true, car = true, combat = true },
         anim = { dict = 'amb@world_human_hammering@male@base', clip = 'base' },
     })
+    SendNUIMessage({ action = 'SFX', play = false })
     if ok then
         TriggerServerEvent('vp_cityworks:completeTarget', target.id, true)
     else

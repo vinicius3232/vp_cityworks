@@ -31,6 +31,9 @@ RegisterNetEvent('vp_cityworks:towLoaded', function(targetId, vehNet, flatbedNet
         CurrentMission.targets[targetId].loaded = true
     end
     attached[targetId] = true
+    -- som do guincho por ~2s
+    SendNUIMessage({ action = 'SFX', sfx = 'winch', play = true })
+    SetTimeout(2000, function() SendNUIMessage({ action = 'SFX', play = false }) end)
 end)
 
 -- entregue: o veiculo ja foi removido no server; só limpamos o estado local

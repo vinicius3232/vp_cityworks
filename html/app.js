@@ -46,6 +46,34 @@ const sndError   = () => beep(160, 0.25, 'sawtooth', 0.18);
 const sndTick    = () => beep(1200, 0.03, 'square', 0.05);
 const sndClick   = () => beep(520, 0.05, 'square', 0.10);
 
+// ---- SFX em loop p/ acoes de mundo (drill/build/winch), acionado via NUI ----
+const sfx = { nodes: [], interval: null };
+function sfxStop() {
+    if (sfx.interval) { clearInterval(sfx.interval); sfx.interval = null; }
+    sfx.nodes.forEach(n => { try { n.stop && n.stop(); } catch (e) {} try { n.disconnect(); } catch (e) {} });
+    sfx.nodes = [];
+}
+function sfxStart(type) {
+    sfxStop();
+    try {
+        const c = ac(); if (c.state === 'suspended') c.resume();
+        if (type === 'drill' || type === 'winch') {
+            const o = c.createOscillator(), g = c.createGain();
+            o.type = type === 'drill' ? 'sawtooth' : 'sine';
+            o.frequency.value = type === 'drill' ? 95 : 70;
+            g.gain.value = type === 'drill' ? 0.06 : 0.05;
+            o.connect(g).connect(c.destination); o.start();
+            sfx.nodes.push(o, g);
+            if (type === 'drill') { // britadeira: tremolo "ratata"
+                let on = true;
+                sfx.interval = setInterval(() => { on = !on; g.gain.setTargetAtTime(on ? 0.07 : 0.0, c.currentTime, 0.004); }, 70);
+            }
+        } else if (type === 'build') { // marteladas ritmadas
+            sfx.interval = setInterval(() => beep(140, 0.10, 'square', 0.10), 480);
+        }
+    } catch (e) {}
+}
+
 /* ----------------------- util ----------------------- */
 const $ = (id) => document.getElementById(id);
 function post(name, data) {
@@ -301,6 +329,7 @@ window.addEventListener('message', (ev) => {
         case 'HUD_PLAYERS':  hudPlayers(d.players); break;
         case 'HUD_HIDE':     $('hud').classList.add('hidden'); break;
         case 'REWARD':       showReward(d.data); break;
+        case 'SFX':          if (d.play) sfxStart(d.sfx); else sfxStop(); break;
     }
 });
 
