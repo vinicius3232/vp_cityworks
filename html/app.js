@@ -288,10 +288,10 @@ function openPanel(s) {
     }
     $('panel-service').classList.add('hidden');
     $('panel-grid').classList.remove('hidden');
-    $('panel-hint').innerHTML = 'Passe o <b>voltimetro</b> sobre os paineis e clique no que estiver com voltagem <b>anormal</b>.';
-    $('panel-progress').textContent = 'Localize o painel defeituoso';
-    $('volt-read').textContent = '--- V';
-    $('volt-read').className = 'timer';
+    $('panel-hint').innerHTML = 'Passe o <b>multimetro</b> sobre os disjuntores e clique no que estiver com voltagem <b>anormal</b>.';
+    $('panel-progress').textContent = 'Localize o disjuntor defeituoso';
+    $('mm-read').textContent = '000';
+    $('mm-read').className = 'mm-read';
     $('panel').classList.remove('hidden');
     // reset parafusos/cover
     document.querySelectorAll('#panel-service .screw').forEach(sc => sc.classList.remove('gone'));
@@ -299,13 +299,13 @@ function openPanel(s) {
 }
 function panelHover(i) {
     if (!pano || pano.phase !== 'find') return;
-    const v = $('volt-read');
+    const v = $('mm-read');
     if (i === pano.broken) {
-        v.textContent = (1 + Math.floor(Math.random() * 5)) + ' V';
-        v.className = 'timer volt-read low';
+        v.textContent = String(1 + Math.floor(Math.random() * 5)).padStart(3, '0');
+        v.className = 'mm-read low';
     } else {
-        v.textContent = (215 + Math.floor(Math.random() * 25)) + ' V';
-        v.className = 'timer volt-read high';
+        v.textContent = String(215 + Math.floor(Math.random() * 25));
+        v.className = 'mm-read high';
     }
 }
 function panelClickCell(i) {

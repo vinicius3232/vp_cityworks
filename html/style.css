@@ -155,6 +155,51 @@ html, body {
 /* hook opcional: usar uma FOTO no disjuntor (settings.image) */
 .pano.img { background-size: cover; background-position: center; padding: 0; }
 .pano.img > * { display: none; }
+
+/* layout: quadro a esquerda, multimetro a direita */
+#panel .cabinet { width: 52vw; max-width: 900px; }
+.panel-row { display: flex; gap: 1vw; align-items: flex-start; }
+.panel-left { flex: 1; min-width: 0; }
+
+/* multimetro DT-830B (desenhado) */
+.mm {
+    flex: 0 0 auto; width: 11vw; border-radius: 12px; padding: .7vw .6vw;
+    background: linear-gradient(160deg, #f6c83c 0%, #e3aa1f 100%);
+    border: 2px solid #b9851a; color: #5a4300;
+    box-shadow: inset 0 0 0 .28vw rgba(255,255,255,.18), 0 10px 22px rgba(0,0,0,.5);
+    display: flex; flex-direction: column; align-items: center; gap: .5vw;
+}
+.mm-lcd {
+    width: 100%; height: 2.8vw; border-radius: 4px; position: relative;
+    display: flex; align-items: center; justify-content: center; gap: .25vw;
+    background: linear-gradient(#d2e7d0, #b9d4b6); border: 2px solid #7a8a7a;
+    box-shadow: inset 0 0 8px rgba(0,0,0,.28);
+}
+.mm-hv { position: absolute; left: .4vw; top: .3vw; font-size: .55vw; font-weight: 800; color: #2a3a2a; }
+.mm-read {
+    font-size: 1.8vw; font-weight: 800; letter-spacing: .12vw; color: #1c241c;
+    font-variant-numeric: tabular-nums; transition: color .08s;
+}
+.mm-read.low  { color: #b00000; }
+.mm-read.high { color: #0a5a16; }
+.mm-unit { font-size: .85vw; font-weight: 800; color: #1c241c; align-self: flex-end; margin-bottom: .45vw; }
+.mm-range { font-size: .62vw; font-weight: 800; letter-spacing: 1px; opacity: .8; }
+.mm-dial {
+    width: 4.6vw; height: 4.6vw; border-radius: 50%; position: relative;
+    background: radial-gradient(circle at 40% 34%, #ffe27a, #d9a51c);
+    border: 2px solid #b9851a; box-shadow: inset 0 0 10px rgba(0,0,0,.25);
+}
+.mm-knob {
+    position: absolute; left: 50%; top: 50%; width: .75vw; height: 2.1vw;
+    background: linear-gradient(#fff6d6, #e7c249); border: 1px solid #b9851a; border-radius: 3px;
+    transform: translate(-50%, -50%) rotate(-32deg); transform-origin: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,.4);
+}
+.mm-label { font-size: .72vw; font-weight: 800; letter-spacing: 1.5px; }
+.mm-leads { display: flex; gap: .8vw; margin-top: .1vw; }
+.mm-leads .lead { width: .5vw; height: 2.2vw; border-radius: 3px; box-shadow: 0 2px 3px rgba(0,0,0,.4); }
+.mm-leads .black { background: linear-gradient(#3a3a3a, #111); }
+.mm-leads .red   { background: linear-gradient(#e23b3b, #911); }
 .volt-read.low  { color: #ff4545; }
 .volt-read.high { color: #2dff42; }
 

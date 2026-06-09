@@ -39,25 +39,37 @@
         <div class="cabinet">
             <header class="cab-header">
                 <span class="cab-title">DIAGNOSTICO DE PAINEL</span>
-                <div class="cab-meta">
-                    <span class="volt-label">VOLTIMETRO</span>
-                    <span id="volt-read" class="timer">--- V</span>
-                </div>
+                <div class="cab-meta"><span class="volt-label">DT-830B</span></div>
             </header>
-            <p class="cab-hint" id="panel-hint">Passe o <b>voltimetro</b> sobre os paineis e clique no que estiver com voltagem <b>anormal</b>.</p>
-            <div id="panel-grid" class="grid"></div>
-
-            <!-- visao de reparo -->
-            <div id="panel-service" class="service hidden">
-                <p id="service-step" class="service-step"></p>
-                <div id="service-board" class="service-board">
-                    <div id="service-cover" class="service-cover hidden"></div>
-                    <div class="screws">
-                        <div class="screw s1" data-s="1"></div>
-                        <div class="screw s2" data-s="2"></div>
-                        <div class="screw s3" data-s="3"></div>
-                        <div class="screw s4" data-s="4"></div>
+            <p class="cab-hint" id="panel-hint">Passe o <b>multimetro</b> sobre os disjuntores e clique no que estiver com voltagem <b>anormal</b>.</p>
+            <div class="panel-row">
+                <div class="panel-left">
+                    <div id="panel-grid" class="grid"></div>
+                    <!-- visao de reparo -->
+                    <div id="panel-service" class="service hidden">
+                        <p id="service-step" class="service-step"></p>
+                        <div id="service-board" class="service-board">
+                            <div id="service-cover" class="service-cover hidden"></div>
+                            <div class="screws">
+                                <div class="screw s1" data-s="1"></div>
+                                <div class="screw s2" data-s="2"></div>
+                                <div class="screw s3" data-s="3"></div>
+                                <div class="screw s4" data-s="4"></div>
+                            </div>
+                        </div>
                     </div>
+                </div>
+                <!-- multimetro DT-830B (LCD ao vivo) -->
+                <div class="mm">
+                    <div class="mm-lcd">
+                        <span class="mm-hv">HV</span>
+                        <span id="mm-read" class="mm-read">000</span>
+                        <span class="mm-unit">V</span>
+                    </div>
+                    <div class="mm-range">DCV · 750</div>
+                    <div class="mm-dial"><div class="mm-knob"></div></div>
+                    <div class="mm-label">DT-830B</div>
+                    <div class="mm-leads"><span class="lead black"></span><span class="lead red"></span></div>
                 </div>
             </div>
 
