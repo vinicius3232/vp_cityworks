@@ -19,10 +19,7 @@ end
 exports('getProfile', getProfile) -- usado por rewards.lua
 
 local function playerName(src)
-    local p = exports.qbx_core:GetPlayer(src)
-    if not p then return 'Unknown' end
-    local ci = p.PlayerData.charinfo
-    return ('%s %s'):format(ci.firstname, ci.lastname)
+    return Framework.GetFullName(src) or 'Unknown'
 end
 _G.vpPlayerName = playerName
 
@@ -98,7 +95,7 @@ lib.callback.register('vp_cityworks:getProfile', function(src)
     local lobby = (existingOwner and Lobbies[existingOwner]) or createLobby(src, cid)
     return {
         name = playerName(src),
-        money = player.PlayerData.money.bank,
+        money = Framework.GetMoney(src, 'bank'),
         level = prof.level,
         xp = prof.xp,
         nextXp = Config.RequiredXP[prof.level] or 0,
@@ -148,16 +145,16 @@ RegisterNetEvent('vp_cityworks:invite', function(targetId)
     local tPlayer, tCid = Security.getPlayer(targetId)
     if not tCid or tCid == cid then return end
     if lobby.players[tCid] then
-        return exports.qbx_core:Notify(src, locale('already_in_lobby'), 'error')
+        return Framework.Notify(src, locale('already_in_lobby'), 'error')
     end
     -- conta jogadores
     local count = 0; for _ in pairs(lobby.players) do count = count + 1 end
     if count >= Config.MaxPlayersPerLobby then
-        return exports.qbx_core:Notify(src, locale('lobby_full'), 'error')
+        return Framework.Notify(src, locale('lobby_full'), 'error')
     end
     -- proximity server-side
     if not Security.isNear(src, GetEntityCoords(GetPlayerPed(targetId)), Config.InviteMaxDistance) then
-        return exports.qbx_core:Notify(src, locale('player_far'), 'error')
+        return Framework.Notify(src, locale('player_far'), 'error')
     end
     PendingInvites[tCid] = cid
     TriggerClientEvent('vp_cityworks:receiveInvite', targetId, playerName(src), cid)
@@ -175,7 +172,7 @@ RegisterNetEvent('vp_cityworks:acceptInvite', function()
     if not lobby or lobby.started then return end
     local count = 0; for _ in pairs(lobby.players) do count = count + 1 end
     if count >= Config.MaxPlayersPerLobby then
-        return exports.qbx_core:Notify(src, locale('lobby_full'), 'error')
+        return Framework.Notify(src, locale('lobby_full'), 'error')
     end
     -- sai do lobby proprio (se tinha um vazio)
     if Lobbies[cid] and not Lobbies[cid].started then destroyLobby(cid) end
@@ -213,7 +210,7 @@ RegisterNetEvent('vp_cityworks:selectDiscipline', function(disciplineId)
     local disc = Config.Disciplines[disciplineId]
     if not disc then return end
     if getProfile(cid).level < (disc.minLevel or 0) then
-        return exports.qbx_core:Notify(src, locale('min_level', disc.minLevel), 'error')
+        return Framework.Notify(src, locale('min_level', disc.minLevel), 'error')
     end
     lobby.disciplineId = disciplineId
     lobby.region = false -- troca de frente reseta a regiao
@@ -238,7 +235,7 @@ RegisterNetEvent('vp_cityworks:selectMission', function(regionKey)
     -- gate de nivel (validado no SERVIDOR, nao so no menu)
     local prof = getProfile(cid)
     if prof.level < (region.minLevel or 0) then
-        return exports.qbx_core:Notify(src, locale('min_level', region.minLevel), 'error')
+        return Framework.Notify(src, locale('min_level', region.minLevel), 'error')
     end
     lobby.region = region
     broadcast(lobby, 'vp_cityworks:refreshLobby', lobby.players, lobby.disciplineId, region)
@@ -300,13 +297,13 @@ RegisterNetEvent('vp_cityworks:startJob', function()
     local lobby, cid = getLobbyBySrc(src)
     if not lobby or lobby.owner ~= cid then return end
     if lobby.started then
-        return exports.qbx_core:Notify(src, locale('job_already_started'), 'error')
+        return Framework.Notify(src, locale('job_already_started'), 'error')
     end
     if not lobby.region then
-        return exports.qbx_core:Notify(src, locale('mission_not_selected'), 'error')
+        return Framework.Notify(src, locale('mission_not_selected'), 'error')
     end
     if getProfile(cid).level < (lobby.region.minLevel or 0) then
-        return exports.qbx_core:Notify(src, locale('min_level', lobby.region.minLevel), 'error')
+        return Framework.Notify(src, locale('min_level', lobby.region.minLevel), 'error')
     end
 
     -- item obrigatorio (ox_inventory)
@@ -314,10 +311,10 @@ RegisterNetEvent('vp_cityworks:startJob', function()
         local function hasItem(s) return (exports.ox_inventory:GetItemCount(s, Config.RequiredItem.name) or 0) > 0 end
         if Config.RequiredItem.wholeTeam then
             for _, pl in pairs(lobby.players) do
-                if not hasItem(pl.src) then return exports.qbx_core:Notify(src, locale('need_item'), 'error') end
+                if not hasItem(pl.src) then return Framework.Notify(src, locale('need_item'), 'error') end
             end
         elseif not hasItem(src) then
-            return exports.qbx_core:Notify(src, locale('need_item'), 'error')
+            return Framework.Notify(src, locale('need_item'), 'error')
         end
     end
 
@@ -325,15 +322,14 @@ RegisterNetEvent('vp_cityworks:startJob', function()
     if Config.VehicleDeposit.enable then
         local acc = Config.VehicleDeposit.account
         local amount = Config.VehicleDeposit.amount
-        local p = exports.qbx_core:GetPlayer(src)
-        if not p or (p.PlayerData.money[acc] or 0) < amount then
-            return exports.qbx_core:Notify(src, locale('dont_have_deposit', amount), 'error')
+        if Framework.GetMoney(src, acc) < amount then
+            return Framework.Notify(src, locale('dont_have_deposit', amount), 'error')
         end
-        p.Functions.RemoveMoney(acc, amount, 'vp_cityworks-deposit')
+        Framework.RemoveMoney(src, acc, amount, 'vp_cityworks-deposit')
         lobby.depositPaid = true
         lobby.deposit = amount
         lobby.depositAccount = acc
-        exports.qbx_core:Notify(src, locale('deposit_charged', amount), 'inform')
+        Framework.Notify(src, locale('deposit_charged', amount), 'inform')
     end
 
     -- consome item obrigatorio (do dono) apos confirmar
@@ -363,7 +359,7 @@ RegisterNetEvent('vp_cityworks:startJob', function()
         lobby.vehicles[#lobby.vehicles + 1] = NetworkGetNetworkIdFromEntity(veh)
         -- da chave a todos do lobby
         for _, pl in pairs(lobby.players) do
-            exports.qbx_vehiclekeys:GiveKeys(pl.src, veh, true)
+            Framework.GiveKeys(pl.src, veh)
         end
     end
     spawnVeh(disc.vehicle.primary, sp[1])
@@ -403,16 +399,16 @@ RegisterNetEvent('vp_cityworks:setRewardSplit', function(split)
     local sum = 0
     for k, v in pairs(split) do
         if type(k) ~= 'string' or type(v) ~= 'number' or v < 0 or v > 100 then
-            return exports.qbx_core:Notify(src, locale('split_invalid'), 'error')
+            return Framework.Notify(src, locale('split_invalid'), 'error')
         end
         if not lobby.players[k] then return end -- cid invalido
         sum = sum + v
     end
     if sum > 100 then
-        return exports.qbx_core:Notify(src, locale('split_invalid'), 'error')
+        return Framework.Notify(src, locale('split_invalid'), 'error')
     end
     lobby.split = split
-    exports.qbx_core:Notify(src, locale('split_set'), 'success')
+    Framework.Notify(src, locale('split_set'), 'success')
 end)
 
 RegisterNetEvent('vp_cityworks:resetJob', function()
@@ -421,11 +417,11 @@ RegisterNetEvent('vp_cityworks:resetJob', function()
     local lobby, cid = getLobbyBySrc(src)
     if not lobby then return end
     if lobby.owner ~= cid then
-        return exports.qbx_core:Notify(src, locale('not_owner'), 'error')
+        return Framework.Notify(src, locale('not_owner'), 'error')
     end
     -- abandono sem entregar = deposito perdido
     if lobby.depositPaid then
-        exports.qbx_core:Notify(src, locale('deposit_lost', lobby.deposit), 'error')
+        Framework.Notify(src, locale('deposit_lost', lobby.deposit), 'error')
         lobby.depositPaid = false
     end
     broadcast(lobby, 'vp_cityworks:jobReset')
@@ -444,7 +440,7 @@ AddEventHandler('playerDropped', function()
         for pcid, pl in pairs(lobby.players) do
             if pcid ~= cid then
                 TriggerClientEvent('vp_cityworks:jobReset', pl.src)
-                exports.qbx_core:Notify(pl.src, locale('left_lobby'), 'error')
+                Framework.Notify(pl.src, locale('left_lobby'), 'error')
             end
         end
         destroyLobby(cid)

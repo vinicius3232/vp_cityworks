@@ -16,11 +16,10 @@ RegisterNetEvent('vp_cityworks:requestService', function(disciplineId)
     local disc = Config.Disciplines[disciplineId]
     if not disc then return end
 
-    local player = exports.qbx_core:GetPlayer(src)
-    if not player then return end
+    if not Framework.GetCitizenId(src) then return end
     local acc = Config.Dispatch.account
-    if (player.PlayerData.money[acc] or 0) < Config.Dispatch.fee then
-        return exports.qbx_core:Notify(src, locale('dispatch_no_money'), 'error')
+    if Framework.GetMoney(src, acc) < Config.Dispatch.fee then
+        return Framework.Notify(src, locale('dispatch_no_money'), 'error')
     end
 
     local coords = GetEntityCoords(GetPlayerPed(src))
@@ -42,9 +41,9 @@ RegisterNetEvent('vp_cityworks:requestService', function(disciplineId)
     end
 
     if sent == 0 then
-        return exports.qbx_core:Notify(src, locale('dispatch_no_workers'), 'error')
+        return Framework.Notify(src, locale('dispatch_no_workers'), 'error')
     end
 
-    player.Functions.RemoveMoney(acc, Config.Dispatch.fee, 'vp_cityworks-dispatch')
-    exports.qbx_core:Notify(src, locale('dispatch_sent'), 'success')
+    Framework.RemoveMoney(src, acc, Config.Dispatch.fee, 'vp_cityworks-dispatch')
+    Framework.Notify(src, locale('dispatch_sent'), 'success')
 end)

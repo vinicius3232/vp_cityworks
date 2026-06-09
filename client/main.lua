@@ -50,10 +50,9 @@ end)
 ---------------------------------------------------------------------
 local function canOpen()
     if Config.RequiredJob == 'all' then return true end
-    local pdata = exports.qbx_core:GetPlayerData()
-    if not pdata or not pdata.job then return false end
+    local job = Framework.GetJob()
     for jobName, minGrade in pairs(Config.RequiredJob) do
-        if pdata.job.name == jobName and pdata.job.grade.level >= minGrade then
+        if job.name == jobName and job.grade >= minGrade then
             return true
         end
     end

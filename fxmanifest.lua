@@ -6,17 +6,15 @@ lua54 'yes'
 name 'vp_cityworks'
 author 'LORD32 aka Vini32 e Dooc'
 version '1.0.0'
-description 'Job cooperativo de eletricista por regiao para QBox (nativo ox)'
+description 'Secretaria de Obras (SADOT) multi-frente — multi-framework (QBox/QBCore/ESX)'
 
--- Dependencias reais deste servidor (versoes confirmadas):
---  qbx_core 1.23.0 | ox_lib 3.32.2 | ox_inventory 2.44.8 | ox_target | ox_fuel | qbx_vehiclekeys | oxmysql
+-- Dependencias COMUNS aos 3 frameworks (ox stack). O core (qbx_core/qb-core/
+-- es_extended) e as chaves de veiculo sao auto-detectados em runtime
+-- (shared/framework.lua), por isso NAO entram como dependencia obrigatoria.
 dependencies {
-    'qbx_core',
     'ox_lib',
     'ox_inventory',
     'ox_target',
-    'ox_fuel',          -- combustivel via statebag 'fuel'
-    'qbx_vehiclekeys',  -- exports.qbx_vehiclekeys:GiveKeys
     'oxmysql',
 }
 
@@ -24,6 +22,7 @@ shared_scripts {
     '@ox_lib/init.lua',
     'config/config.lua',
     'shared/utils.lua',
+    'shared/framework.lua',
 }
 
 client_scripts {

@@ -6,12 +6,12 @@ local cooldowns = {} -- [src][action] = lastTimeMs
 
 --- Fonte valida = jogador realmente conectado e com Player object.
 --- @param src number
---- @return table|nil player (qbx player), string|nil citizenid
+--- @return string|nil exists, string|nil citizenid (callers usam o 2o valor)
 function Security.getPlayer(src)
     if type(src) ~= 'number' or src <= 0 then return end
-    local player = exports.qbx_core:GetPlayer(src)
-    if not player then return end
-    return player, player.PlayerData.citizenid
+    local cid = Framework.GetCitizenId(src)
+    if not cid then return end
+    return cid, cid
 end
 
 --- Rate limit por acao. Retorna true se PODE agir (e marca o tempo).
@@ -42,9 +42,7 @@ end
 
 --- Log de atividade suspeita (webhook OPCIONAL via convar, sem token hardcoded).
 function Security.logSuspicious(src, reason, extra)
-    local citizenid
-    local player = exports.qbx_core:GetPlayer(src)
-    if player then citizenid = player.PlayerData.citizenid end
+    local citizenid = Framework.GetCitizenId(src)
     print(('[vp_cityworks][SUSPEITO] src=%s cid=%s motivo=%s extra=%s')
         :format(src, citizenid or '?', reason, extra and json.encode(extra) or ''))
 

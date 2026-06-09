@@ -40,7 +40,7 @@ RegisterNetEvent('vp_cityworks:loadVehicle', function(targetId)
         end
     end
     if not flatbedNet then
-        return exports.qbx_core:Notify(src, locale('tow_need_flatbed'), 'error')
+        return Framework.Notify(src, locale('tow_need_flatbed'), 'error')
     end
 
     target.loaded = true
@@ -62,7 +62,7 @@ RegisterNetEvent('vp_cityworks:deliverTow', function(targetId)
     local ped = GetPlayerPed(src)
     if not ped or ped == 0 then return end
     if not nearAnyDelivery(GetEntityCoords(ped), disc, (disc.targetRadius.delivery) or 12.0) then
-        return exports.qbx_core:Notify(src, locale('tow_go_delivery'), 'error')
+        return Framework.Notify(src, locale('tow_go_delivery'), 'error')
     end
 
     -- remove o veiculo rebocado

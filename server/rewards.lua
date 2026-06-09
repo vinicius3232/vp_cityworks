@@ -8,7 +8,7 @@ RegisterNetEvent('vp_cityworks:deliverVehicle', function()
     if not Security.canAct(src, 'deliverVehicle', Config.Cooldowns.deliverVehicle) then return end
     local lobby, cid = vpGetLobbyBySrc(src)
     if not lobby or not lobby.finished then
-        return exports.qbx_core:Notify(src, locale('job_not_started'), 'error')
+        return Framework.Notify(src, locale('job_not_started'), 'error')
     end
 
     -- valida que ha um veiculo do job perto do ponto de entrega (server-side)
@@ -39,11 +39,8 @@ RegisterNetEvent('vp_cityworks:deliverVehicle', function()
     if lobby.depositPaid then
         local ownerPl = lobby.players[lobby.owner]
         if ownerPl then
-            local op = exports.qbx_core:GetPlayer(ownerPl.src)
-            if op then
-                op.Functions.AddMoney(lobby.depositAccount or 'bank', lobby.deposit, 'vp_cityworks-deposit-refund')
-                exports.qbx_core:Notify(ownerPl.src, locale('deposit_refunded', lobby.deposit), 'success')
-            end
+            Framework.AddMoney(ownerPl.src, lobby.depositAccount or 'bank', lobby.deposit, 'vp_cityworks-deposit-refund')
+            Framework.Notify(ownerPl.src, locale('deposit_refunded', lobby.deposit), 'success')
         end
         lobby.depositPaid = false
     end
@@ -60,24 +57,21 @@ RegisterNetEvent('vp_cityworks:deliverVehicle', function()
         if lobby.split then
             pay = math.ceil(lobby.rewardMoney * (lobby.split[pcid] or 0) / 100)
         end
-        local player = exports.qbx_core:GetPlayer(pl.src)
-        if player then
-            if pay > 0 then player.Functions.AddMoney('bank', pay, 'vp_cityworks-reward') end
-            local prof = exports[GetCurrentResourceName()]:getProfile(pcid)
-            local newLevel, newXp, leveledUp = Utils.applyXP(prof.level, prof.xp, xp, Config.RequiredXP, Config.MaxLevel)
-            prof.level, prof.xp = newLevel, newXp
-            DB.saveProfile(pcid, newXp, newLevel)
-            exports.qbx_core:Notify(pl.src, locale('reward_received', pay, xp), 'success')
-            if leveledUp then
-                exports.qbx_core:Notify(pl.src, locale('level_up', newLevel), 'success')
-            end
-            TriggerClientEvent('vp_cityworks:rewardScreen', pl.src, {
-                name = pl.name,
-                money = pay,
-                xp = xp,
-                score = pl.score or 0,
-            })
+        if pay > 0 then Framework.AddMoney(pl.src, 'bank', pay, 'vp_cityworks-reward') end
+        local prof = exports[GetCurrentResourceName()]:getProfile(pcid)
+        local newLevel, newXp, leveledUp = Utils.applyXP(prof.level, prof.xp, xp, Config.RequiredXP, Config.MaxLevel)
+        prof.level, prof.xp = newLevel, newXp
+        DB.saveProfile(pcid, newXp, newLevel)
+        Framework.Notify(pl.src, locale('reward_received', pay, xp), 'success')
+        if leveledUp then
+            Framework.Notify(pl.src, locale('level_up', newLevel), 'success')
         end
+        TriggerClientEvent('vp_cityworks:rewardScreen', pl.src, {
+            name = pl.name,
+            money = pay,
+            xp = xp,
+            score = pl.score or 0,
+        })
     end
 
     sendRewardLog(lobby, lobby.rewardMoney)
