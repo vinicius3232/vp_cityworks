@@ -140,7 +140,11 @@ CreateThread(function()
                 local target = CurrentMission and CurrentMission.targets[id]
                 if target and not target.fixed then
                     if eq.kind == 'lift' and eq.platform and DoesEntityExist(eq.platform) then
-                        ControlLift(id, eq, pc)
+                        -- so processa (e poll de teclas a 0ms) quando perto do lift
+                        if #(pc - vec3(eq.lift.x, eq.lift.y, pc.z)) < 25.0 then
+                            sleep = 0
+                            ControlLift(id, eq, pc)
+                        end
                     elseif #(pc - target.coords) < 4.0 then
                         sleep = 0
                         DrawText3D(target.coords, locale('remove_equipment'))
