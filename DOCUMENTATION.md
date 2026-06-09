@@ -160,7 +160,7 @@ O servidor é a única fonte de verdade. **Nunca confia** em coords/identificado
 | `Dispatch` | serviço sob demanda (command, fee, disciplines) |
 | `Equipment` | escada/lift |
 | `WorkClothes` / `RedArrowMarker` | cloakroom / seta |
-| `Minigames.failDamage` / `minSeconds` | dano / anti-skip |
+| `Minigames.failDamage` / `minSeconds` / `panelMaxWrong` | dano / anti-skip / tentativas no voltímetro |
 | `ExternalMinigames` | ponte opcional p/ libs externas (bl_ui/glitch) por export |
 | `TowerWear` | desgaste opcional das torres do `vp_towers` |
 | `MaxLevel` / `RequiredXP` | progressão |

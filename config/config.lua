@@ -88,6 +88,7 @@ Config.RedArrowMarker = true
 Config.Minigames = {
     failDamage = { min = 10, max = 25 },
     minSeconds = 1.5, -- tempo minimo entre abrir e concluir um alvo (anti-bot)
+    panelMaxWrong = 2, -- voltimetro: cliques errados tolerados antes do choque (0 = falha no 1o erro)
 }
 
 ---------------------------------------------------------------------

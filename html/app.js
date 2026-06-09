@@ -276,7 +276,7 @@ function openPanel(s) {
     stopMeterTone();
     const count = s.panels || 12;
     pano = { count, broken: Math.floor(Math.random() * count), phase: 'find', screwsDone: 0,
-        wrong: 0, maxWrong: 2, hoverCell: null, measuredCell: null, measuring: null };
+        wrong: 0, maxWrong: (s.maxWrong != null ? s.maxWrong : 2), hoverCell: null, measuredCell: null, measuring: null };
     const grid = $('panel-grid'); grid.innerHTML = '';
     for (let i = 0; i < count; i++) {
         const cell = document.createElement('div');

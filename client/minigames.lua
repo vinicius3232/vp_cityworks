@@ -102,6 +102,12 @@ end
 function StartNuiGame(nui, taskType, cb)
     local tbl = discMinigames()[nui.cfg] or {}
     local settings = tbl[taskType] or tbl.default or {}
+    -- injeta o maxWrong global no painel (copia, sem mutar a config)
+    if nui.cfg == 'panel' and Config.Minigames.panelMaxWrong ~= nil then
+        local c = {}; for k, v in pairs(settings) do c[k] = v end
+        c.maxWrong = Config.Minigames.panelMaxWrong
+        settings = c
+    end
     nuiCb = cb
     PlayWorkAnim()
     SetNuiFocus(true, true)
