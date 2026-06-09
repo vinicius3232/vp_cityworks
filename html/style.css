@@ -200,6 +200,15 @@ html, body {
 .mm-leads .lead { width: .5vw; height: 2.2vw; border-radius: 3px; box-shadow: 0 2px 3px rgba(0,0,0,.4); }
 .mm-leads .black { background: linear-gradient(#3a3a3a, #111); }
 .mm-leads .red   { background: linear-gradient(#e23b3b, #911); }
+
+/* ponteira vermelha = cursor do painel (a agulha fica na ponta do mouse) */
+.mm-probe {
+    position: fixed; width: 2.2vw; height: 7.6vw; pointer-events: none; z-index: 55; display: none;
+    transform-origin: 50% 100%; transform: translate(-50%, -100%) rotate(20deg);
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,.5));
+}
+.mm-probe svg { width: 100%; height: 100%; display: block; }
+#panel .grid, #panel .pano { cursor: none; }
 .volt-read.low  { color: #ff4545; }
 .volt-read.high { color: #2dff42; }
 

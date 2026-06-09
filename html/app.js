@@ -296,6 +296,11 @@ function openPanel(s) {
     // reset parafusos/cover
     document.querySelectorAll('#panel-service .screw').forEach(sc => sc.classList.remove('gone'));
     $('service-cover').classList.add('hidden');
+    const pb = $('mm-probe'); if (pb) pb.style.display = 'block'; // mostra a ponteira
+}
+function moveProbe(e) {
+    const p = $('mm-probe'); if (!p) return;
+    p.style.left = e.clientX + 'px'; p.style.top = e.clientY + 'px';
 }
 function panelHover(i) {
     if (!pano || pano.phase !== 'find') return;
@@ -313,6 +318,7 @@ function panelClickCell(i) {
     if (i !== pano.broken) { sndError(); return finish(false); } // painel errado = choque
     // entra em reparo
     sndClick();
+    const pb = $('mm-probe'); if (pb) pb.style.display = 'none'; // guarda a ponteira no reparo
     pano.phase = 'removing';
     $('panel-grid').classList.add('hidden');
     $('panel-service').classList.remove('hidden');
@@ -641,6 +647,7 @@ $('service-cover').addEventListener('click', panelCover);
 document.addEventListener('mousemove', (e) => {
     if (active === 'wiring') return wiringMove(e);
     if (active === 'weld') return weldMove(e);
+    if (active === 'panel') return moveProbe(e);
 });
 document.addEventListener('mouseup', (e) => {
     if (active === 'wiring') return wiringUp(e);
