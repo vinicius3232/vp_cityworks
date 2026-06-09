@@ -529,7 +529,8 @@ function hudPlayers(players) {
     const arr = Array.isArray(players) ? players : Object.values(players);
     arr.forEach(p => {
         const row = document.createElement('div'); row.className = 'hud-row';
-        row.innerHTML = `<span class="lbl">${p.name || '?'}</span><span class="val">${p.score || 0}</span>`;
+        row.innerHTML = `<div class="hud-av" style="background:${avatarColor(p.name)}">${avatarInitials(p.name)}</div>` +
+            `<span class="lbl">${p.name || '?'}</span><span class="val">${p.score || 0}</span>`;
         c.appendChild(row);
     });
 }
