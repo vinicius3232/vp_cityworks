@@ -284,8 +284,9 @@ function openPanel(s) {
         if (s.image) { // hook: foto propria/livre no disjuntor
             cell.classList.add('img');
             cell.style.backgroundImage = `url("${s.image}")`;
-        } else { // disjuntor desenhado (parafuso -> LED -> chave OFF -> parafuso)
-            cell.innerHTML = '<span class="brk-screw"></span><span class="brk-led"></span><span class="brk-sw">OFF</span><span class="brk-screw"></span>';
+        } else { // disjuntor estilizado (4 parafusos nos cantos + alavanca)
+            cell.innerHTML = '<span class="brk-screw s1"></span><span class="brk-screw s2"></span>' +
+                '<span class="brk-screw s3"></span><span class="brk-screw s4"></span><span class="brk-lever"></span>';
         }
         grid.appendChild(cell);
     }
@@ -331,6 +332,13 @@ function stopMeterTone() {
     if (meterOsc) { try { meterOsc.stop(); } catch (e) {} meterOsc.disconnect(); meterOsc = null; }
     if (meterGain) { meterGain.disconnect(); meterGain = null; }
 }
+// acende a luz do voltimetro (verde=normal, vermelho=defeito, null=apaga)
+function mmLights(broken) {
+    document.querySelectorAll('#mm .mm-light').forEach(l => l.classList.remove('on'));
+    if (broken === null) return;
+    const lit = document.querySelector('#mm .mm-light.' + (broken ? 'red' : 'green'));
+    if (lit) lit.classList.add('on');
+}
 // ---- A: medir segurando (flutua -> estabiliza) ----
 function stopMeasure() { if (pano && pano.measuring) { clearInterval(pano.measuring); pano.measuring = null; } }
 function startMeasure(i) {
@@ -351,6 +359,7 @@ function startMeasure(i) {
             v.className = 'mm-read ' + (broken ? 'low' : 'high');
             pano.measuredCell = i;
             startMeterTone(broken);
+            mmLights(broken);
             stopMeasure();
         }
     }, 60);
@@ -363,11 +372,11 @@ function panelHover(i) {
 }
 function panelGridLeave() {
     if (!pano || pano.phase !== 'find') return;
-    pano.hoverCell = null; stopMeasure(); stopMeterTone();
+    pano.hoverCell = null; stopMeasure(); stopMeterTone(); mmLights(null);
     const v = $('mm-read'); v.textContent = '000'; v.className = 'mm-read';
 }
 function panelCleanup() {
-    stopMeasure(); stopMeterTone();
+    stopMeasure(); stopMeterTone(); mmLights(null);
     const pb = $('mm-probe'); if (pb) pb.style.display = 'none';
 }
 function panelClickCell(i) {

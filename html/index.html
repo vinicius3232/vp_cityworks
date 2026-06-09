@@ -59,9 +59,25 @@
                         </div>
                     </div>
                 </div>
-                <!-- multimetro DT-830B (foto real) + LCD ao vivo -->
-                <div class="mm">
-                    <span id="mm-read" class="mm-read">000</span>
+                <!-- voltimetro desenhado (display neon + luzes + cabos) -->
+                <div id="mm" class="mm">
+                    <div class="mm-body">
+                        <div class="mm-top">VOLTÍMETRO</div>
+                        <div class="mm-screen">
+                            <span id="mm-read" class="mm-read">000</span>
+                            <span class="mm-unit">V</span>
+                        </div>
+                        <div class="mm-lights">
+                            <span class="mm-light red"></span>
+                            <span class="mm-light green"></span>
+                        </div>
+                        <div class="mm-knob2"></div>
+                    </div>
+                    <svg class="mm-cables" viewBox="0 0 160 110" preserveAspectRatio="none">
+                        <path class="cab-g" d="M34 0 C 12 40, 56 60, 30 110" />
+                        <path class="cab-r" d="M80 0 C 108 38, 52 66, 84 110" />
+                        <path class="cab-y" d="M126 0 C 150 46, 100 60, 122 110" />
+                    </svg>
                 </div>
             </div>
 

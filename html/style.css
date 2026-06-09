@@ -126,45 +126,32 @@ html, body {
 .grid {
     display: grid; grid-template-columns: repeat(4, 1fr); gap: .7vw;
     padding: 1vw; border-radius: 8px;
-    background: linear-gradient(160deg, #243027, #151d18);
+    background: linear-gradient(160deg, #2a2e35, #14171b);
     border: 2px solid #0c0d10; box-shadow: inset 0 0 26px rgba(0,0,0,.6);
 }
-/* disjuntor DIN estilo DEP3: branco, LED verde, chave azul OFF, parafusos cruz */
+/* disjuntor estilizado (caixa escura + 4 parafusos nos cantos + alavanca) */
 .pano {
-    height: 6vw; border-radius: 4px; position: relative; cursor: none; overflow: hidden;
-    display: flex; flex-direction: column; align-items: center; justify-content: space-between;
-    padding: .4vw 0;
-    background: linear-gradient(180deg, #ffffff 0%, #f1f1ee 55%, #e2e1db 100%);
-    border: 1px solid #b9b7af; box-shadow: 0 1px 2px rgba(0,0,0,.4), inset 0 1px 0 #fff;
+    height: 5.6vw; border-radius: 6px; position: relative; cursor: none; overflow: hidden;
+    background: linear-gradient(160deg, #313640, #1b1e24);
+    border: 1px solid #0c0d10; box-shadow: inset 0 0 10px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.04);
     transition: filter .1s, box-shadow .1s;
 }
-/* parafuso Pozidriv (terminais Line/Load) */
-.brk-screw {
-    width: .95vw; height: .95vw; border-radius: 50%; flex: 0 0 auto; position: relative;
-    background: radial-gradient(circle at 36% 30%, #e6e9ec, #8d9197 68%, #686b70);
-    border: 1px solid #5a5d63; box-shadow: inset 0 0 2px rgba(0,0,0,.4);
+.pano .brk-screw {
+    position: absolute; width: .7vw; height: .7vw; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #7a7f88, #2a2d33 70%); border: 1px solid #0c0d10;
 }
-.brk-screw::after {
-    content: ''; position: absolute; inset: 24%;
-    background:
-        linear-gradient(#4a4d52, #4a4d52) center / 100% 24% no-repeat,
-        linear-gradient(#4a4d52, #4a4d52) center / 24% 100% no-repeat;
+.pano .brk-screw::after { content: ''; position: absolute; inset: 32%; background: #15171a; border-radius: 1px; transform: rotate(40deg); }
+.pano .brk-screw.s1 { top: .35vw; left: .35vw; }
+.pano .brk-screw.s2 { top: .35vw; right: .35vw; }
+.pano .brk-screw.s3 { bottom: .35vw; left: .35vw; }
+.pano .brk-screw.s4 { bottom: .35vw; right: .35vw; }
+.pano .brk-lever {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    width: 1.4vw; height: 2.3vw; border-radius: 4px;
+    background: linear-gradient(180deg, #3a8de0, #1f5fae); border: 1px solid #12365f;
+    box-shadow: inset 0 .35vw 0 rgba(255,255,255,.28), inset 0 -.25vw .25vw rgba(0,0,0,.45), 0 2px 4px rgba(0,0,0,.5);
 }
-/* LED verde de status */
-.brk-led {
-    width: 1.1vw; height: .5vw; border-radius: 50%; flex: 0 0 auto;
-    background: radial-gradient(circle at 40% 35%, #b6ffb6, #18a818 72%);
-    box-shadow: 0 0 6px rgba(45,255,66,.7), inset 0 0 2px rgba(0,0,0,.3);
-}
-/* chave azul O·OFF */
-.brk-sw {
-    width: 1.8vw; height: 2vw; border-radius: 3px; flex: 0 0 auto;
-    display: flex; align-items: center; justify-content: center;
-    font-size: .44vw; font-weight: 800; letter-spacing: .3px; color: #dcebff;
-    background: linear-gradient(180deg, #3a8de0 0%, #1f5fae 100%);
-    border: 1px solid #164a8a; box-shadow: inset 0 .3vw 0 rgba(255,255,255,.28), inset 0 -.2vw .2vw rgba(0,0,0,.3);
-}
-.pano:hover { filter: brightness(1.03); box-shadow: 0 0 0 2px #ffcf24, 0 1px 2px rgba(0,0,0,.4); }
+.pano:hover { filter: brightness(1.18); box-shadow: 0 0 0 2px #ffcf24, inset 0 0 10px rgba(0,0,0,.55); }
 .pano.wrong { animation: panoWrong .4s; box-shadow: 0 0 0 2px #ff4545 !important; }
 @keyframes panoWrong { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
 /* hook opcional: usar uma FOTO no disjuntor (settings.image) */
@@ -176,21 +163,40 @@ html, body {
 .panel-row { display: flex; gap: 1vw; align-items: flex-start; }
 .panel-left { flex: 1; min-width: 0; }
 
-/* multimetro DT-830B (FOTO real) com LCD ao vivo sobreposto */
-.mm {
-    flex: 0 0 auto; width: 13vw; aspect-ratio: 1 / 1; position: relative;
-    background: url('img/multimetro.png') center / contain no-repeat;
+/* voltimetro DESENHADO (estilo base): device escuro + display neon + cabos */
+.mm { flex: 0 0 auto; width: 12vw; display: flex; flex-direction: column; align-items: center; }
+.mm-body {
+    width: 100%; border-radius: 12px; padding: .8vw; display: flex; flex-direction: column; align-items: center; gap: .6vw;
+    background: linear-gradient(160deg, #23262b, #14171b); border: 2px solid #0c0d10;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 10px 22px rgba(0,0,0,.5);
 }
-/* LCD ao vivo: mascara o "0.00" impresso e mostra a leitura real */
+.mm-top { font-size: .6vw; letter-spacing: 2px; color: #8a8f98; font-weight: 800; }
+.mm-screen {
+    width: 100%; height: 3vw; border-radius: 6px; display: flex; align-items: center; justify-content: center; gap: .3vw;
+    background: linear-gradient(#0d1410, #080b09); border: 1px solid #0c0d10; box-shadow: inset 0 0 14px rgba(0,0,0,.8);
+}
 .mm-read {
-    position: absolute; left: 22%; top: 6.4%; width: 30%; height: 10%;
-    display: flex; align-items: center; justify-content: center;
-    background: #ccd6ca; border-radius: 2px;
-    color: #1c241c; font-weight: 800; font-size: 1.25vw; letter-spacing: .02vw;
-    font-variant-numeric: tabular-nums; transition: color .08s;
+    font-size: 1.7vw; font-weight: 800; color: #2dff42; letter-spacing: .08vw;
+    font-variant-numeric: tabular-nums; text-shadow: 0 0 10px currentColor; transition: color .08s;
 }
-.mm-read.low  { color: #b00000; }
-.mm-read.high { color: #0a5a16; }
+.mm-read.low  { color: #ff4545; }
+.mm-read.high { color: #2dff42; }
+.mm-unit { font-size: .8vw; font-weight: 800; color: #4a5750; align-self: flex-end; margin-bottom: .5vw; }
+.mm-lights { display: flex; gap: 1.1vw; }
+.mm-light { width: .8vw; height: .8vw; border-radius: 50%; background: #2a2d33; box-shadow: inset 0 0 3px #000; transition: .12s; }
+.mm-light.red.on   { background: #ff4545; box-shadow: 0 0 12px #ff4545; }
+.mm-light.green.on { background: #2dff42; box-shadow: 0 0 12px #2dff42; }
+.mm-knob2 {
+    width: 1.7vw; height: 1.7vw; border-radius: 50%; position: relative;
+    background: radial-gradient(circle at 38% 32%, #565c64, #23262b 70%); border: 2px solid #0c0d10;
+    box-shadow: 0 2px 4px rgba(0,0,0,.5);
+}
+.mm-knob2::after { content: ''; position: absolute; left: 50%; top: 16%; width: .18vw; height: .6vw; background: #ffcf24; transform: translateX(-50%); border-radius: 2px; }
+.mm-cables { width: 92%; height: 5.5vw; margin-top: -.2vw; }
+.mm-cables path { fill: none; stroke-width: 7; stroke-linecap: round; }
+.mm-cables .cab-g { stroke: #2dff42; filter: drop-shadow(0 0 4px rgba(45,255,66,.8)); }
+.mm-cables .cab-r { stroke: #ff4545; filter: drop-shadow(0 0 4px rgba(255,69,69,.8)); }
+.mm-cables .cab-y { stroke: #ffcf24; filter: drop-shadow(0 0 4px rgba(255,207,36,.8)); }
 
 /* ponteira vermelha = cursor do painel (a agulha fica na ponta do mouse) */
 .mm-probe {

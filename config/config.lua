@@ -222,11 +222,11 @@ Config.Disciplines = {
                 default       = { wireCount = 4, maxFails = 3, time = 60 },
             },
             panel = {
-                -- FOTO real do disjuntor (DEP3, feita pelo dono) em html/img/disjuntor.png.
-                -- Para voltar ao disjuntor desenhado, remova o campo image.
-                fixTrafo      = { panels = 12, image = 'nui://vp_cityworks/html/img/disjuntor.png' },
-                fixHouseBoard = { panels = 9,  image = 'nui://vp_cityworks/html/img/disjuntor.png' },
-                default       = { panels = 12, image = 'nui://vp_cityworks/html/img/disjuntor.png' },
+                -- disjuntor DESENHADO (estilo painel eletrico, CSS). Hook opcional:
+                -- adicione image = 'nui://vp_cityworks/html/img/SEU.png' p/ usar foto.
+                fixTrafo      = { panels = 12 },
+                fixHouseBoard = { panels = 9 },
+                default       = { panels = 12 },
             },
             wiring = {
                 fixTrafficLamp = { count = 4 },
