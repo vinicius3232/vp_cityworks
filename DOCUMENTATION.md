@@ -22,14 +22,17 @@ OneSync `on`, Entity Lockdown `relaxed` (compatível com `CreateVehicleServerSet
 
 ---
 
-## 2. Instalação
+## 2. Instalação (plug & play)
 
-1. Importe `sql/migration.sql` (tabela `vp_cityworks`).
-2. O grupo `[standalone]` já é `ensure`d no `server.cfg` — **não duplique**. Para forçar: `ensure vp_cityworks`.
-3. ⚠️ **Desabilite o `vp_electrician` antigo** (este resource o substitui).
-4. (Opcional) log Discord via convar (sem token no código):
-   `set vp_cityworks_webhook "https://discord.com/api/webhooks/..."`
+**Dependências** (já padrão num servidor QBox): qbx_core, ox_lib, ox_inventory, ox_target, ox_fuel, qbx_vehiclekeys, oxmysql. **Nada além disso** — veículos são todos base game (sem stream), e itens (`RequiredItem`/`RewardItems`) vêm **desligados** por padrão.
+
+1. Soltar a pasta `vp_cityworks` em `resources/[standalone]/`.
+2. `ensure vp_cityworks` (ou já sobe pelo grupo `[standalone]`). **Não importe SQL** — a tabela é criada sozinha no boot (`Config.AutoCreateTable = true`; `sql/migration.sql` é só referência/fallback).
+3. ⚠️ **Substitui o `vp_electrician`** — não rode os dois juntos.
+4. (Opcional) log Discord via convar: `set vp_cityworks_webhook "https://discord.com/api/webhooks/..."`
 5. (Opcional) locale pt-BR: `setr ox:locale pt-br`.
+
+> Para ativar itens (ferramenta obrigatória / itens de recompensa), basta adicionar os itens no `ox_inventory` e ligar `Config.RequiredItem`/`Config.RewardItems`.
 
 ---
 

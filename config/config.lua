@@ -104,6 +104,9 @@ end
 ---------------------------------------------------------------------
 Config.LogWebhookConvar = 'vp_cityworks_webhook'
 
+-- Plug & play: cria a tabela MySQL sozinho ao iniciar (sem importar SQL na mao).
+Config.AutoCreateTable = true
+
 ---------------------------------------------------------------------
 -- FRENTES DE TRABALHO (disciplinas)
 -- Cada uma traz: label/icon/minLevel, veiculo, rotulos, equipamento,

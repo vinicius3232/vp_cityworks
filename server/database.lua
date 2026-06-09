@@ -1,6 +1,21 @@
 -- server/database.lua :: queries centralizadas (oxmysql com ? - nunca concatena)
 DB = {}
 
+--- PLUG & PLAY: cria a tabela automaticamente ao iniciar o resource.
+--- (CREATE TABLE IF NOT EXISTS = idempotente; nao precisa importar SQL na mao)
+CreateThread(function()
+    if Config.AutoCreateTable == false then return end
+    MySQL.query.await([[
+        CREATE TABLE IF NOT EXISTS `vp_cityworks` (
+            `citizenid` VARCHAR(50) NOT NULL,
+            `xp`        INT NOT NULL DEFAULT 0,
+            `level`     INT NOT NULL DEFAULT 1,
+            PRIMARY KEY (`citizenid`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    ]])
+    print('^2[vp_cityworks]^0 tabela `vp_cityworks` pronta (auto-create).')
+end)
+
 --- Garante a tabela e carrega/cria o perfil do jogador.
 --- @param citizenid string
 --- @return table { xp, level }

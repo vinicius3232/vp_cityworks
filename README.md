@@ -10,8 +10,8 @@ Empresa de manutenção da cidade para **QBox** (nativo ox_lib/ox_inventory/ox_t
 ## Stack (versões deste servidor)
 - qbx_core 1.23.0 · ox_lib 3.32.2 · ox_inventory 2.44.8 · ox_target · ox_fuel · qbx_vehiclekeys · oxmysql
 
-## Instalação
-1. Importe `sql/migration.sql` (tabela `vp_cityworks`).
+## Instalação (plug & play)
+1. **Não precisa importar SQL** — a tabela `vp_cityworks` é criada sozinha ao iniciar (`Config.AutoCreateTable`). `sql/migration.sql` fica só como referência.
 2. O grupo `[standalone]` já é `ensure`d — **não** duplique. Para forçar: `ensure vp_cityworks`.
 3. ⚠️ **Substitui o `vp_electrician`** — não rode os dois juntos (duplica NPC/tabela). No servidor de dev a pasta antiga já foi removida.
 4. (Opcional) log Discord por convar: `set vp_cityworks_webhook "https://discord.com/api/webhooks/..."`
