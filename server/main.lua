@@ -358,16 +358,12 @@ RegisterNetEvent('vp_cityworks:startJob', function()
         return Framework.Notify(src, locale('min_level', lobby.region.minLevel), 'error')
     end
 
-    -- gera a missao ANTES de cobrar deposito/item: se nao houver trabalho
-    -- (ex.: frente "torres" sem torres danificadas ou vp_towers ausente),
-    -- aborta sem cobrar nada.
-    local disc = Utils.discipline(lobby.disciplineId)
-    local mission = generateMission(disc, lobby.region)
-    if mission.remaining <= 0 then
-        return Framework.Notify(src, locale('no_work_available'), 'error')
-    end
+    -- GATES read-only ANTES de gerar a missao. A geracao da frente "torres"
+    -- tem efeito colateral (simulateDamage pode danificar torres do vp_towers),
+    -- entao so geramos depois que o player passou em TODOS os checks — assim
+    -- ninguem dispara dano nas torres so "tentando" iniciar sem item/saldo.
 
-    -- item obrigatorio (ox_inventory)
+    -- item obrigatorio (ox_inventory) — apenas verifica posse aqui
     if Config.RequiredItem.enable then
         local function hasItem(s) return (exports.ox_inventory:GetItemCount(s, Config.RequiredItem.name) or 0) > 0 end
         if Config.RequiredItem.wholeTeam then
@@ -379,18 +375,30 @@ RegisterNetEvent('vp_cityworks:startJob', function()
         end
     end
 
-    -- deposito do veiculo (cobrado do DONO)
+    -- deposito: verifica saldo (SEM cobrar ainda)
+    local depAcc, depAmount
     if Config.VehicleDeposit.enable then
-        local acc = Config.VehicleDeposit.account
-        local amount = Config.VehicleDeposit.amount
-        if Framework.GetMoney(src, acc) < amount then
-            return Framework.Notify(src, locale('dont_have_deposit', amount), 'error')
+        depAcc, depAmount = Config.VehicleDeposit.account, Config.VehicleDeposit.amount
+        if Framework.GetMoney(src, depAcc) < depAmount then
+            return Framework.Notify(src, locale('dont_have_deposit', depAmount), 'error')
         end
-        Framework.RemoveMoney(src, acc, amount, 'vp_cityworks-deposit')
+    end
+
+    -- gera a missao: se nao houver trabalho (frente "torres" sem torres
+    -- danificadas / vp_towers ausente), aborta SEM cobrar nada.
+    local disc = Utils.discipline(lobby.disciplineId)
+    local mission = generateMission(disc, lobby.region)
+    if mission.remaining <= 0 then
+        return Framework.Notify(src, locale('no_work_available'), 'error')
+    end
+
+    -- gates passaram + ha trabalho: agora COBRA o deposito (do DONO)
+    if Config.VehicleDeposit.enable then
+        Framework.RemoveMoney(src, depAcc, depAmount, 'vp_cityworks-deposit')
         lobby.depositPaid = true
-        lobby.deposit = amount
-        lobby.depositAccount = acc
-        Framework.Notify(src, locale('deposit_charged', amount), 'inform')
+        lobby.deposit = depAmount
+        lobby.depositAccount = depAcc
+        Framework.Notify(src, locale('deposit_charged', depAmount), 'inform')
     end
 
     -- consome item obrigatorio (do dono) apos confirmar
