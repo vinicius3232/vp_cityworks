@@ -7,8 +7,10 @@ Empresa de manutenção da cidade para **QBox** (nativo ox_lib/ox_inventory/ox_t
 
 > Script feito por **LORD32 aka Vini32 e Dooc**
 
-## Stack (versões deste servidor)
-- qbx_core 1.23.0 · ox_lib 3.32.2 · ox_inventory 2.44.8 · ox_target · ox_fuel · qbx_vehiclekeys · oxmysql
+## Stack
+- **Core (auto-detect):** qbx_core · qb-core · es_extended
+- **Comuns:** ox_lib · ox_inventory · ox_target · oxmysql (+ ox_fuel opcional)
+- **Chaves (auto):** qbx_vehiclekeys · qb-vehiclekeys · wasabi_carlock (ou `Config.GiveKeysFn`)
 
 ## Instalação (plug & play)
 1. **Não precisa importar SQL** — a tabela `vp_cityworks` é criada sozinha ao iniciar (`Config.AutoCreateTable`). `sql/migration.sql` fica só como referência.

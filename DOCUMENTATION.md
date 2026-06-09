@@ -11,7 +11,7 @@
 | Resource | Versão | Uso |
 |----------|--------|-----|
 | qbx_core | 1.23.0 | `GetPlayer`, `AddMoney`/`RemoveMoney`, `Notify`, `GetPlayerData` |
-| ox_lib | 3.32.2 | callbacks, context menu, dialogs, skillCheck, progressBar, notify, cache |
+| ox_lib | 3.32.2 | callbacks, skillCheck, progressBar, alertDialog, notify, cache, points |
 | ox_inventory | 2.44.8 | item obrigatório, itens de recompensa (`GetItemCount`/`AddItem`/`RemoveItem`) |
 | ox_target | — | interação no NPC |
 | ox_fuel | — | combustível via statebag `Entity(veh).state:set('fuel', x, true)` |
