@@ -5,6 +5,7 @@
     "job_already_started": "O trabalho ja foi iniciado.",
     "mission_not_selected": "Voce nao selecionou uma missao.",
     "no_work_available": "Nenhum servico disponivel nesta frente no momento.",
+    "need_toolbox": "Pegue a caixa de ferramentas no caminhao (/obrasferramenta).",
     "min_level": "Nivel %s necessario para esta regiao.",
     "need_item": "Voce (ou a equipe) precisa do item necessario para iniciar.",
     "dont_have_deposit": "Voce nao tem $%s para o deposito do veiculo.",

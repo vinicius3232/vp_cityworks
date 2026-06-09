@@ -161,6 +161,7 @@ O servidor é a única fonte de verdade. **Nunca confia** em coords/identificado
 | `Equipment` | escada/lift |
 | `WorkClothes` / `RedArrowMarker` / `Marker` | cloakroom / seta / cores dos marcadores |
 | `Interaction.scenario` | animação do NPC capataz (prancheta) |
+| `Toolbox` | RASCUNHO: caixa carregável (opt-in `enable` + `discipline.requiresToolbox`; afinar bone/offset in-game) |
 | `Minigames.failDamage` / `minSeconds` / `panelMaxWrong` | dano / anti-skip / tentativas no voltímetro |
 | `ExternalMinigames` | ponte opcional p/ libs externas (bl_ui/glitch) por export |
 | `TowerWear` | desgaste opcional das torres do `vp_towers` |
@@ -191,6 +192,7 @@ client/equipment.lua   escada + lift móvel (SlideObject)
 client/minigames.lua   roteador NUI/skillcheck + dano
 client/towing.lua      loop de reboque (carregar/entregar/attach)
 client/dispatch.lua    /pedirservico + blip do chamado
+client/toolbox.lua     RASCUNHO: caixa de ferramentas carregavel (opt-in, afinar in-game)
 html/                  index.html · style.css · app.js (minigames + HUD + recompensa)
 sql/migration.sql      tabela vp_cityworks (PK)
 ```

@@ -79,6 +79,25 @@ Config.Equipment = {
 -- os componentes alterados (sem depender do sistema de skin do framework).
 Config.WorkClothes = { enable = true }
 
+-- ── Caixa de ferramentas (RASCUNHO — afinar IN-GAME) ──────────────
+-- Imersao estilo gg: pegar a caixa no caminhao e carregar ate o alvo.
+-- OPT-IN: ligue enable e marque `requiresToolbox = true` nas frentes que
+-- devem exigir. Padrao DESLIGADO (nao altera o fluxo atual).
+-- ⚠️ bone/offset/anim sao PLACEHOLDER — ajuste no servidor.
+Config.Toolbox = {
+    enable       = false,
+    command      = 'obrasferramenta', -- pegar/largar a caixa (perto do caminhao)
+    item         = nil,               -- ex.: 'toolbox' p/ exigir item (nil = nao exige)
+    prop         = `ch_prop_toolbox_01a`,
+    walkRate     = 0.85,              -- velocidade ao carregar (0..1)
+    grabDistance = 6.0,               -- distancia max do caminhao p/ pegar
+    attach = { bone = 28422, x = 0.10, y = 0.0, z = -0.02, rx = -90.0, ry = 0.0, rz = 0.0 }, -- ⚠️ AJUSTE
+    anim = {
+        pickup = { dict = 'anim@mp_snowball', clip = 'pickup_snowball', time = 700 },
+        carry  = { dict = 'anim@heists@box_carry@', clip = 'idle' },
+    },
+}
+
 -- Seta vermelha alta sobre os alvos (visivel de longe).
 Config.RedArrowMarker = true
 -- Cores (RGB) dos marcadores de alvo (animados: halo pulsa, seta com bob).

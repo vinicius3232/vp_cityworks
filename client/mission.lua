@@ -130,6 +130,7 @@ local function clearMission()
     for _, obj in ipairs(buildProps) do if DoesEntityExist(obj) then DeleteEntity(obj) end end
     buildProps = {}
     ClearEquipment() -- equipment.lua
+    if DropToolbox then DropToolbox() end -- toolbox.lua (rascunho)
     restoreClothes() -- cloakroom
     SendNUIMessage({ action = 'HUD_HIDE' })
     CurrentMission = nil
@@ -316,6 +317,12 @@ function CutPower(target)
 end
 
 function TryOpenTarget(target)
+    -- (opt-in) exige a caixa de ferramentas carregada nesta frente
+    if ActiveDiscipline and ActiveDiscipline.requiresToolbox and Config.Toolbox and Config.Toolbox.enable
+        and IsCarryingToolbox and not IsCarryingToolbox() then
+        CityNotify(locale('need_toolbox'), 'error')
+        return
+    end
     local res = lib.callback.await('vp_cityworks:openTarget', false, { targetId = target.id })
     if not res then
         CityNotify(locale('target_busy'), 'error')
