@@ -2,7 +2,7 @@
 
 Empresa de manutenção da cidade para **QBox** (nativo ox_lib/ox_inventory/ox_target), com **várias frentes de trabalho** cooperativas sob a mesma central.
 
-**Frentes (6):** ⚡ Eletricista · 🛣️ Asfalto/Vias · 🏗️ Construção · 🪧 Sinalização · 💡 Iluminação · 🚛 Guincho.
+**Frentes (7):** ⚡ Eletricista · 🛣️ Asfalto/Vias · 🏗️ Construção · 🪧 Sinalização · 💡 Iluminação · 🚛 Guincho · 📡 Manutenção de Torres.
 **Modos de tarefa:** `minigame` (3 NUI: solda/voltímetro/fiação), `drill` (alvo com vida), `build` (progress+props), `tow` (rebocar veículo). **Dispatch sob demanda** (`/pedirservico`). Motor genérico (`Config.Disciplines`) — novas frentes entram só adicionando config.
 
 > Script feito por **LORD32 aka Vini32 e Dooc**
@@ -44,7 +44,17 @@ entrega o veículo no depot → **recompensa** (dinheiro dividido + XP, multipli
 | 4 | Frente Guincho (`tow`) | ✅ |
 | 5 | Dispatch sob demanda | ✅ |
 | 6 | Docs + precheck (eventos/callbacks/locales casados, manifest, balance) | ✅ |
+| 7 | Frente **Manutenção de Torres** (integra com `vp_towers`) | ✅ |
 | 🔍 | Auditoria 4 dimensões: **0 críticos, 0 altos** (perf otimizada, segurança/DB ok) | ✅ |
+
+## 📡 Frente "Manutenção de Torres" (integração com `vp_towers`)
+Conserta as torres de rádio do resource [`vp_towers`](https://github.com/vinicius3232/vp_towers) — que dá cobertura de sinal para `vp_crimescene`/`vp_policejob` mas não tinha gameplay próprio.
+
+- **Alvos dinâmicos:** ao iniciar o serviço, o servidor lê `exports.vp_towers:GetTowers()` e cria alvos nas torres **danificadas** (`health < repairThreshold`).
+- **Reparo:** minigame de fiação ("reconfigurar a antena") na base da torre → ao concluir, o servidor chama `exports.vp_towers:SetTowerHealth(index, 100)`.
+- **Sempre tem trabalho:** se faltar torre danificada, `integration.simulateDamage` danifica algumas ao iniciar (gera demanda). Config por disciplina (`Config.Disciplines.towers.integration`).
+- **Desgaste opcional** (`Config.TowerWear`, *default off*): degrada torres ao longo do tempo criando manutenção natural. ⚠️ ligar afeta a cobertura de sinal usada pela polícia/wiretap.
+- **Sem `vp_towers`?** a frente simplesmente não gera serviço (inicia → aborta sem cobrar/reembolsa o depósito).
 
 ## Ajuste in-game pendente (física/mundo)
 - "Pegada" do **lift** e offset do **attach do flatbed** (guincho).

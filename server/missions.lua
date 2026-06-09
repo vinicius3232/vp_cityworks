@@ -16,6 +16,16 @@ local function completeTargetInternal(lobby, target, cid, src)
 
     lobby.players[cid].score = (lobby.players[cid].score or 0) + 1
 
+    -- TORRES: restaura o health da torre reparada no vp_towers (resource externo)
+    if target.towerIndex then
+        local disc = Utils.discipline(lobby.disciplineId)
+        local ig = (disc and disc.integration) or {}
+        local res = ig.resource or 'vp_towers'
+        if GetResourceState(res) == 'started' then
+            pcall(function() exports[res]:SetTowerHealth(target.towerIndex, ig.repairTo or 100) end)
+        end
+    end
+
     -- itens de recompensa (chance %) -> quem concluiu
     for _, ri in ipairs(Config.RewardItems) do
         if ri.item and math.random(100) <= (ri.chance or 0) then

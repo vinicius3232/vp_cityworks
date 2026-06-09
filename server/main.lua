@@ -266,6 +266,56 @@ local function generateMission(disc, region)
         return mission
     end
 
+    -- TORRES: alvos sao gerados das torres DANIFICADAS do vp_towers
+    if disc.kind == 'towers' then
+        local ig = disc.integration or {}
+        local res = ig.resource or 'vp_towers'
+        local threshold = ig.repairThreshold or 100
+        local want = region.towCount or 3
+        mission.progress['fix'] = { count = 0, made = 0, label = disc.taskLabels.fix or 'Reparar Torre' }
+
+        if GetResourceState(res) ~= 'started' then
+            print(('^3[vp_cityworks]^0 frente "torres" requer o resource %s ligado.'):format(res))
+            return mission -- remaining=0 -> startJob aborta e reembolsa
+        end
+
+        local ok, towers = pcall(function() return exports[res]:GetTowers() end)
+        if not ok or type(towers) ~= 'table' then return mission end
+
+        -- coleta as torres danificadas (index real = posicao no array do vp_towers)
+        local damaged = {}
+        for i, tw in ipairs(towers) do
+            if (tw.health or 100) < threshold then
+                damaged[#damaged + 1] = { index = i, coords = tw.coords, label = tw.label }
+            end
+        end
+
+        -- sem trabalho suficiente: danifica torres saudaveis p/ gerar servico
+        if ig.simulateDamage and #damaged < want then
+            for i, tw in ipairs(towers) do
+                if #damaged >= want then break end
+                if (tw.health or 100) >= threshold then
+                    pcall(function() exports[res]:SetTowerHealth(i, ig.damagedHealth or 20) end)
+                    damaged[#damaged + 1] = { index = i, coords = tw.coords, label = tw.label }
+                end
+            end
+        end
+
+        local picked = Utils.pickRandom(damaged, want)
+        mission.progress['fix'].count = #picked
+        for _, tw in ipairs(picked) do
+            nextId = nextId + 1
+            mission.targets[nextId] = {
+                id = nextId, type = 'fix', mode = 'minigame',
+                coords = vec3(tw.coords.x, tw.coords.y, tw.coords.z),
+                towerIndex = tw.index, towerLabel = tw.label,
+                fixed = false, openBy = nil, equipped = true,
+            }
+            mission.remaining = mission.remaining + 1
+        end
+        return mission
+    end
+
     for _, task in ipairs(region.jobTasks) do
         local pool = region.pools[task.name] or {}
         local picked = Utils.pickRandom(pool, task.count)
@@ -308,6 +358,15 @@ RegisterNetEvent('vp_cityworks:startJob', function()
         return Framework.Notify(src, locale('min_level', lobby.region.minLevel), 'error')
     end
 
+    -- gera a missao ANTES de cobrar deposito/item: se nao houver trabalho
+    -- (ex.: frente "torres" sem torres danificadas ou vp_towers ausente),
+    -- aborta sem cobrar nada.
+    local disc = Utils.discipline(lobby.disciplineId)
+    local mission = generateMission(disc, lobby.region)
+    if mission.remaining <= 0 then
+        return Framework.Notify(src, locale('no_work_available'), 'error')
+    end
+
     -- item obrigatorio (ox_inventory)
     if Config.RequiredItem.enable then
         local function hasItem(s) return (exports.ox_inventory:GetItemCount(s, Config.RequiredItem.name) or 0) > 0 end
@@ -339,10 +398,9 @@ RegisterNetEvent('vp_cityworks:startJob', function()
         exports.ox_inventory:RemoveItem(src, Config.RequiredItem.name, 1)
     end
 
-    local disc = Utils.discipline(lobby.disciplineId)
     lobby.started = true
     lobby.finished = false
-    lobby.mission = generateMission(disc, lobby.region)
+    lobby.mission = mission
 
     -- conta players p/ recompensa e 2o veiculo
     local count = 0; for _ in pairs(lobby.players) do count = count + 1 end

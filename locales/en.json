@@ -4,6 +4,7 @@
     "job_not_started": "You haven't started the job yet.",
     "job_already_started": "The job has already started.",
     "mission_not_selected": "You haven't selected a mission.",
+    "no_work_available": "No service available on this front right now.",
     "min_level": "Level %s required for this region.",
     "need_item": "You (or the team) need the required item to start.",
     "dont_have_deposit": "You don't have $%s for the vehicle deposit.",

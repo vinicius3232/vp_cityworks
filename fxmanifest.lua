@@ -41,6 +41,7 @@ server_scripts {
     'server/main.lua',
     'server/missions.lua',
     'server/towing.lua',
+    'server/towers.lua',
     'server/dispatch.lua',
     'server/rewards.lua',
 }

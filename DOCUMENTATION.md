@@ -48,6 +48,7 @@ O jogador interage no NPC → escolhe a **frente** → escolhe a **região/contr
 | 🪧 `signage` | placa, faixa | build + minigame | instalar/pintar |
 | 💡 `streetlight` | lâmpada | minigame | sem lift |
 | 🚛 `towing` | rebocar veículo | tow | flatbed (`kind='towing'`) |
+| 📡 `towers` | reparar torre de rádio | minigame | alvos dinâmicos do `vp_towers` (`kind='towers'`) |
 
 `Config.DisciplineOrder` define a ordem no menu. Cada frente tem `minLevel` (gate de nível, validado no servidor).
 
@@ -89,6 +90,21 @@ Reimplementado do zero (inspirado no 0r-towtruck, open source).
 - Concluídos todos → devolver o flatbed no depot (`region.deliveryCoords`) → pagamento.
 
 ⚠️ O attach do flatbed precisa de ajuste fino in-game (offset por modelo).
+
+---
+
+## 6.1 Manutenção de Torres (`kind='towers'`) — integração com `vp_towers`
+
+Conserta as torres de rádio do resource externo `vp_towers` (que fornece cobertura de sinal para `vp_crimescene`/`vp_policejob`).
+
+- `generateMission` (branch `kind='towers'`) lê `exports.vp_towers:GetTowers()` e coleta as torres **danificadas** (`health < integration.repairThreshold`). O **índice** do alvo é a posição real no array do `vp_towers` (usada no reparo).
+- Se faltar trabalho e `integration.simulateDamage=true`, danifica torres saudáveis (`SetTowerHealth(i, damagedHealth)`) até ter `region.towCount` alvos.
+- Alvos são `mode='minigame'` na **base** da torre (`equipped=true`, sem lift). Minigame de fiação (`minigames.byTask.fix='wiring'`).
+- **Reparo** (em `completeTargetInternal`): ao concluir um alvo com `towerIndex`, o servidor chama `exports.vp_towers:SetTowerHealth(towerIndex, integration.repairTo)` (guardado por `GetResourceState`).
+- `startJob` agora **gera a missão antes de cobrar** depósito/item: se `mission.remaining == 0` (sem `vp_towers` ou sem torres danificadas), aborta com `no_work_available` **sem cobrar nada**.
+- **Desgaste opcional** (`server/towers.lua` + `Config.TowerWear`, *default off*): thread que degrada uma torre aleatória a cada `interval`, criando manutenção natural. ⚠️ afeta a cobertura de sinal — ligar com consciência.
+
+> Integração 100% via exports do `vp_towers` (sem acoplamento de tabela/evento). Resource ausente → frente inerte.
 
 ---
 
@@ -151,6 +167,7 @@ server/security.lua    getPlayer, rate limit, proximity, log
 server/main.lua        lobby, frentes, convites, start, veículo, gate, mission
 server/missions.lua    conclusão (minigame/drill/build), equipamento, lift, power
 server/towing.lua      carregar/entregar veículo (guincho)
+server/towers.lua      desgaste opcional de torres (Config.TowerWear)
 server/dispatch.lua    serviço sob demanda
 server/rewards.lua     entrega, pagamento (split/depósito), XP, persistência
 client/main.lua        ped, ox_target, menu (frente→região), lobby, reset cmd

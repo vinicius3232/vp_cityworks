@@ -421,7 +421,60 @@ Config.Disciplines = {
             },
         },
     },
+
+    -----------------------------------------------------------------
+    -- MANUTENCAO DE TORRES (kind = 'towers' — integra com vp_towers)
+    -- Conserta as torres de radio do vp_towers (SetTowerHealth -> 100).
+    -- Os alvos sao GERADOS dinamicamente a partir das torres danificadas
+    -- (health < repairThreshold). Reparo no solo (base da torre), minigame
+    -- de fiacao "reconfigurar a antena". Requer o resource vp_towers ligado.
+    -----------------------------------------------------------------
+    towers = {
+        id = 'towers', label = 'Manutencao de Torres', icon = 'tower-broadcast', minLevel = 2,
+        kind = 'towers', -- ativa a geracao dinamica de alvos (server/main.lua)
+        vehicle = { primary = `utillitruck2`, secondary = `utillitruck3`, fuel = 100.0 },
+        taskLabels = { fix = 'Reparar Torre' },
+        targetRadius = { fix = 5.0, delivery = 12.0 },
+        requiresEquipment = {}, -- reparo no solo (base da torre); sem escada/lift
+        taskMode = { fix = 'minigame' },
+        minigames = {
+            byTask = { fix = 'wiring' }, -- reconfigurar a antena (minigame de fiacao)
+            wiring = { fix = { count = 5 }, default = { count = 4 } },
+        },
+        -- INTEGRACAO com vp_towers (resource separado; exports server-side)
+        integration = {
+            resource        = 'vp_towers',
+            repairThreshold = 100,  -- torre conta como "danificada" se health < isto
+            repairTo        = 100,  -- health restaurado ao concluir o reparo
+            simulateDamage  = true, -- se faltar torre danificada, danifica algumas p/ gerar trabalho
+            damagedHealth   = 20,   -- health aplicado ao simular dano
+        },
+        regions = {
+            {
+                key = 1, title = 'Torres - Regiao Metropolitana', minLevel = 2, maxPlayers = 4,
+                awards = { money = 9500, xp = 1600, coopMultiplier = 1.5 },
+                spawnCoords = { vec4(533.26, -1595.88, 28.52, 136.32), vec4(522.83, -1606.42, 28.64, 320.61) },
+                deliveryCoords = vec3(533.26, -1595.88, 28.52), -- depot p/ devolver o veiculo
+                towCount = 3, -- quantas torres reparar no servico (limite de alvos)
+            },
+        },
+    },
 }
 
 -- Ordem das frentes no menu
-Config.DisciplineOrder = { 'electrician', 'roadwork', 'construction', 'signage', 'streetlight', 'towing' }
+Config.DisciplineOrder = { 'electrician', 'roadwork', 'construction', 'signage', 'streetlight', 'towing', 'towers' }
+
+-- ── Desgaste de torres (OPCIONAL) ─────────────────────────────────
+-- Sistema de fundo que danifica torres do vp_towers ao longo do tempo,
+-- criando demanda natural para a frente "Manutencao de Torres".
+-- Desativado por padrao: ligar afeta a cobertura de sinal usada por
+-- vp_crimescene/vp_policejob. A frente tambem funciona sem isto graças
+-- ao simulateDamage da integracao (gera trabalho ao iniciar o servico).
+Config.TowerWear = {
+    enable    = false,       -- true p/ degradar torres automaticamente
+    resource  = 'vp_towers', -- resource alvo
+    interval  = 600000,      -- ms entre desgastes (10 min)
+    amount    = 15,          -- quanto de health remove por tick
+    minHealth = 0,           -- nao baixa abaixo disto
+    chance    = 50,          -- % de chance de ocorrer desgaste a cada tick
+}
