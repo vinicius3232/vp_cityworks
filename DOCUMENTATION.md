@@ -24,7 +24,7 @@ OneSync `on`, Entity Lockdown `relaxed` (compatível com `CreateVehicleServerSet
 
 ## 2. Instalação (plug & play)
 
-**Dependências** (já padrão num servidor QBox): qbx_core, ox_lib, ox_inventory, ox_target, ox_fuel, qbx_vehiclekeys, oxmysql. **Nada além disso** — veículos são todos base game (sem stream), e itens (`RequiredItem`/`RewardItems`) vêm **desligados** por padrão.
+**Multi-framework** (QBox/QBCore/ESX) — o core e as chaves de veículo são **auto-detectados** em runtime (`shared/framework.lua`). **Dependências** (comuns aos 3): ox_lib, ox_inventory, ox_target, oxmysql (+ ox_fuel opcional). Veículos são base game (sem stream); itens (`RequiredItem`/`RewardItems`) vêm **desligados** por padrão.
 
 1. Soltar a pasta `vp_cityworks` em `resources/[standalone]/`.
 2. `ensure vp_cityworks` (ou já sobe pelo grupo `[standalone]`). **Não importe SQL** — a tabela é criada sozinha no boot (`Config.AutoCreateTable = true`; `sql/migration.sql` é só referência/fallback).

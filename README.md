@@ -25,8 +25,10 @@ entrega o veículo no depot → **recompensa** (dinheiro dividido + XP, multipli
 ## Arquitetura (resumo)
 - **Server-authoritative**: `Lobbies[ownerCid]` derivado do `src`; revalida lobby, proximity, cooldown,
   trava de concorrência, anti-skip e gate de nível em cada conclusão. O client nunca decide recompensa.
+- **Multi-framework** (QBox/QBCore/ESX, auto-detect via `shared/framework.lua`).
 - **Motor por frente** (`Config.Disciplines`) com 4 modos de tarefa: `minigame` (3 NUI: solda/voltímetro/fiação),
-  `drill` (alvo com vida), `build` (progress+props), `tow` (guincho/flatbed).
+  `drill` (alvo com vida + SFX britadeira), `build` (progress+props + SFX martelo), `tow` (guincho/flatbed + SFX winch).
+- **Menu em NUI custom** (não ox_lib): frentes, contratos, equipe, boss split.
 - **Dispatch** (`/pedirservico`): cidadão chama, equipe em serviço recebe o chamado.
 - **Hardening completo** (`server/security.lua`): rate limit + guards de tipo + proximity em todos os eventos.
 
