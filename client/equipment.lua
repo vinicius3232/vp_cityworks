@@ -115,6 +115,7 @@ end
 function DestroyEquipment(targetId)
     local eq = spawnedEquipment[targetId]
     if not eq then return end
+    if eq.pedAttached then DetachEntity(cache.ped, true, true); eq.pedAttached = false end
     if eq.lift then eq.lift.moving = false end
     for _, obj in ipairs(eq.props) do
         if DoesEntityExist(obj) then DeleteEntity(obj) end
@@ -161,10 +162,17 @@ end)
 
 --- Player em pe na plataforma controla a altura com as setas.
 --- NAO teleporta o ped: ele sobe por colisao (igual ao script base).
+local function detachRider(eq)
+    if eq.pedAttached then
+        DetachEntity(cache.ped, true, true)
+        eq.pedAttached = false
+    end
+end
+
 function ControlLift(id, eq, pc)
     local platCoords = GetEntityCoords(eq.platform)
     local distXY = #(vec2(pc.x, pc.y) - vec2(platCoords.x, platCoords.y))
-    local onPlatform = distXY < 1.8 and (pc.z - platCoords.z) > -0.5 and (pc.z - platCoords.z) < 2.5
+    local onPlatform = eq.pedAttached or (distXY < 1.8 and (pc.z - platCoords.z) > -0.5 and (pc.z - platCoords.z) < 2.5)
     local distGround = #(pc - vec3(eq.lift.x, eq.lift.y, pc.z))
 
     if onPlatform or distGround < 3.0 then
@@ -173,12 +181,24 @@ function ControlLift(id, eq, pc)
 
     -- remover perto da base
     if distGround < 3.5 and IsControlJustReleased(0, 47) then -- G
+        detachRider(eq)
         eq.lift.moving = false
         TriggerServerEvent('vp_cityworks:removeEquipment', id)
         return
     end
 
     if not onPlatform then return end
+
+    -- ANTI-QUEDA/DESSYNC: anexa o ped a plataforma enquanto ela se move
+    -- (sobe junto perfeitamente) e solta quando parar (pode andar/reparar).
+    local up, down = IsControlPressed(0, CTRL_UP), IsControlPressed(0, CTRL_DOWN)
+    if (up or down) and not eq.pedAttached then
+        AttachEntityToEntity(cache.ped, eq.platform, 0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0,
+            false, false, false, false, 2, true)
+        eq.pedAttached = true
+    elseif not up and not down and eq.pedAttached then
+        detachRider(eq)
+    end
 
     if IsControlJustPressed(0, CTRL_UP) then
         TriggerServerEvent('vp_cityworks:moveLift', id, 'up', true)

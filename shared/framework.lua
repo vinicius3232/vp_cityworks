@@ -6,12 +6,33 @@
 Framework = { name = 'unknown' }
 
 local function detect()
-    if GetResourceState('qbx_core') == 'started' then return 'qbx' end
-    if GetResourceState('qb-core') == 'started' then return 'qb' end
-    if GetResourceState('es_extended') == 'started' then return 'esx' end
+    -- aceita 'started' e 'starting' (ordem de boot pode variar sem dependency)
+    local function up(res) local s = GetResourceState(res); return s == 'started' or s == 'starting' end
+    if up('qbx_core') then return 'qbx' end
+    if up('qb-core') then return 'qb' end
+    if up('es_extended') then return 'esx' end
     return 'unknown'
 end
 Framework.name = detect()
+
+-- Sem dependency obrigatoria do core, o vp_cityworks pode subir ANTES dele.
+-- Re-detecta por ate ~10s ate o core ficar disponivel.
+if Framework.name == 'unknown' then
+    CreateThread(function()
+        local tries = 0
+        while Framework.name == 'unknown' and tries < 50 do
+            Wait(200); tries = tries + 1
+            Framework.name = detect()
+        end
+        if Framework.name == 'unknown' then
+            print('^1[vp_cityworks]^0 Nenhum framework detectado (qbx_core/qb-core/es_extended).')
+        else
+            print(('^2[vp_cityworks]^0 Framework: %s'):format(Framework.name))
+        end
+    end)
+else
+    print(('^2[vp_cityworks]^0 Framework: %s'):format(Framework.name))
+end
 
 -- core object (qb/esx). qbx usa exports diretos.
 local core

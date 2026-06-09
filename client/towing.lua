@@ -14,26 +14,56 @@ local function getFlatbedNear(coords, dist)
     end
 end
 
--- veiculo carregado: anexa o quebrado ao flatbed
-RegisterNetEvent('vp_cityworks:towLoaded', function(targetId, vehNet, flatbedNet)
+-- pede controle de rede da entidade antes de mexer (evita dessync)
+local function ensureControl(ent)
+    if NetworkHasControlOfEntity(ent) then return true end
+    SetNetworkIdCanMigrate(NetworkGetNetworkIdFromEntity(ent), true)
+    local t = 0
+    while not NetworkHasControlOfEntity(ent) and t < 30 do
+        NetworkRequestControlOfEntity(ent)
+        Wait(15); t = t + 1
+    end
+    return NetworkHasControlOfEntity(ent)
+end
+
+-- offset do veiculo no flatbed: por-modelo > dinamico (GetModelDimensions) > padrao
+local function flatbedOffset(disc, broken)
+    local model = GetEntityModel(broken)
+    local pos = disc.vehiclePositions and disc.vehiclePositions[model]
+    if pos then return pos.x, pos.y, pos.z end
+    local def = disc.attachOffset or { x = 0.0, y = -2.6, z = 1.0 }
+    -- Z dinamico: assenta as rodas no leito usando a altura do modelo
+    local minDim = GetModelDimensions(model)
+    local z = def.z + (minDim and -minDim.z or 0.0)
+    return def.x, def.y, z
+end
+
+-- veiculo carregado: SO o loader anexa (dono da entidade); OneSync replica
+RegisterNetEvent('vp_cityworks:towLoaded', function(targetId, vehNet, flatbedNet, loaderId)
+    if CurrentMission and CurrentMission.targets[targetId] then
+        CurrentMission.targets[targetId].loaded = true
+    end
+    attached[targetId] = true
+    SendNUIMessage({ action = 'SFX', sfx = 'winch', play = true })
+    SetTimeout(2000, function() SendNUIMessage({ action = 'SFX', play = false }) end)
+
+    if loaderId ~= cache.serverId then return end -- so quem carregou anexa
     local disc = ActiveDiscipline
     if not disc then return end
     local broken = NetToVeh(vehNet)
     local flatbed = NetToVeh(flatbedNet)
     if not broken or broken == 0 or not DoesEntityExist(broken) then return end
     if not flatbed or flatbed == 0 or not DoesEntityExist(flatbed) then return end
-    local o = disc.attachOffset or { x = 0.0, y = -2.6, z = 1.0 }
+    if not ensureControl(broken) then return end
+
     local bone = GetEntityBoneIndexByName(flatbed, 'bodyshell')
     if bone == -1 then bone = 0 end
-    AttachEntityToEntity(broken, flatbed, bone, o.x, o.y, o.z, 0.0, 0.0, 0.0,
+    local ox, oy, oz = flatbedOffset(disc, broken)
+    SetVehicleEngineOn(broken, false, true, true)
+    FreezeEntityPosition(broken, false)
+    AttachEntityToEntity(broken, flatbed, bone, ox, oy, oz, 0.0, 0.0, 0.0,
         false, false, false, false, 2, true)
-    if CurrentMission and CurrentMission.targets[targetId] then
-        CurrentMission.targets[targetId].loaded = true
-    end
-    attached[targetId] = true
-    -- som do guincho por ~2s
-    SendNUIMessage({ action = 'SFX', sfx = 'winch', play = true })
-    SetTimeout(2000, function() SendNUIMessage({ action = 'SFX', play = false }) end)
+    SetEntityCollision(broken, false, true) -- nao briga com a fisica do flatbed
 end)
 
 -- entregue: o veiculo ja foi removido no server; só limpamos o estado local

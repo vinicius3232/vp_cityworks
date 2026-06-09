@@ -45,7 +45,9 @@ RegisterNetEvent('vp_cityworks:loadVehicle', function(targetId)
 
     target.loaded = true
     target.flatbedNetId = flatbedNet
-    vpBroadcast(lobby, 'vp_cityworks:towLoaded', target.id, target.vehicleNetId, flatbedNet)
+    -- loaderId = quem carregou: só esse client faz o attach (dono da entidade);
+    -- OneSync replica o anexo aos demais (evita double-attach / dessync).
+    vpBroadcast(lobby, 'vp_cityworks:towLoaded', target.id, target.vehicleNetId, flatbedNet, src)
 end)
 
 -- entregar o veiculo rebocado num ponto de entrega

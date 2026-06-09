@@ -389,7 +389,13 @@ Config.Disciplines = {
         taskLabels = { tow = 'Rebocar Veiculo' },
         targetRadius = { delivery = 12.0 },
         loadDistance = 8.0,       -- distancia (flatbed<->veiculo) p/ carregar
-        attachOffset = { x = 0.0, y = -2.6, z = 1.0 }, -- posicao do veiculo no flatbed
+        attachOffset = { x = 0.0, y = -2.6, z = 1.0 }, -- posicao padrao do veiculo no flatbed
+        -- offset por MODELO (sobrescreve o padrao). Z = altura do leito p/ as rodas
+        -- assentarem. Ajuste fino in-game. Fallback dinamico via GetModelDimensions.
+        vehiclePositions = {
+            -- [`baller`] = { x = 0.0, y = -2.6, z = 1.1 },
+            -- [`prairie`] = { x = 0.0, y = -2.6, z = 1.0 },
+        },
         -- pontos de entrega dos veiculos rebocados
         deliveryPoints = {
             vec3(-217.97, 6253.78, 30.49),
