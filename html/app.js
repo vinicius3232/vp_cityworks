@@ -296,6 +296,10 @@ function openPanel(s) {
     // reset parafusos/cover
     document.querySelectorAll('#panel-service .screw').forEach(sc => sc.classList.remove('gone'));
     $('service-cover').classList.add('hidden');
+    // placa de reparo usa a MESMA foto do disjuntor (se houver)
+    const sb = $('service-board');
+    if (s.image) { sb.classList.add('img'); sb.style.backgroundImage = `url("${s.image}")`; }
+    else { sb.classList.remove('img'); sb.style.backgroundImage = ''; }
     const pb = $('mm-probe'); if (pb) pb.style.display = 'block'; // mostra a ponteira
 }
 function moveProbe(e) {
