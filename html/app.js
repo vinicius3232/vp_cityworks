@@ -89,6 +89,7 @@ function finish(success) {
     if (!active) return;
     if (active === 'weld') weldCleanup();
     if (active === 'hammer') hammerCleanup();
+    if (active === 'panel') panelCleanup();
     active = null;
     hideAll();
     post('minigameResult', { success: !!success });
@@ -272,8 +273,10 @@ let pano = null;
 
 function openPanel(s) {
     active = 'panel';
+    stopMeterTone();
     const count = s.panels || 12;
-    pano = { count, broken: Math.floor(Math.random() * count), phase: 'find', screwsDone: 0 };
+    pano = { count, broken: Math.floor(Math.random() * count), phase: 'find', screwsDone: 0,
+        wrong: 0, maxWrong: 2, hoverCell: null, measuredCell: null, measuring: null };
     const grid = $('panel-grid'); grid.innerHTML = '';
     for (let i = 0; i < count; i++) {
         const cell = document.createElement('div');
@@ -306,28 +309,86 @@ function moveProbe(e) {
     const p = $('mm-probe'); if (!p) return;
     p.style.left = e.clientX + 'px'; p.style.top = e.clientY + 'px';
 }
+// ---- C: tom do multimetro (continuidade) ----
+let meterOsc = null, meterGain = null;
+function startMeterTone(broken) {
+    stopMeterTone();
+    try {
+        const c = ac(); if (c.state === 'suspended') c.resume();
+        meterOsc = c.createOscillator(); meterGain = c.createGain();
+        meterOsc.type = 'sine';
+        meterOsc.frequency.value = broken ? 200 : 640; // grave = defeito, agudo = normal
+        meterGain.gain.value = 0.04;
+        meterOsc.connect(meterGain).connect(c.destination); meterOsc.start();
+        if (broken) { // defeito: tom intermitente (sem continuidade)
+            let on = true;
+            meterGain._iv = setInterval(() => { on = !on; meterGain.gain.setTargetAtTime(on ? 0.05 : 0.0, c.currentTime, 0.01); }, 180);
+        }
+    } catch (e) {}
+}
+function stopMeterTone() {
+    if (meterGain && meterGain._iv) clearInterval(meterGain._iv);
+    if (meterOsc) { try { meterOsc.stop(); } catch (e) {} meterOsc.disconnect(); meterOsc = null; }
+    if (meterGain) { meterGain.disconnect(); meterGain = null; }
+}
+// ---- A: medir segurando (flutua -> estabiliza) ----
+function stopMeasure() { if (pano && pano.measuring) { clearInterval(pano.measuring); pano.measuring = null; } }
+function startMeasure(i) {
+    stopMeasure(); stopMeterTone();
+    const v = $('mm-read');
+    const broken = (i === pano.broken);
+    const real = broken ? (1 + Math.floor(Math.random() * 5)) : (215 + Math.floor(Math.random() * 25));
+    let elapsed = 0; const total = 650;
+    pano.measuring = setInterval(() => {
+        if (!pano || pano.phase !== 'find') { stopMeasure(); return; }
+        elapsed += 60;
+        if (elapsed < total) { // leitura instavel enquanto mede
+            v.textContent = String(Math.floor(Math.random() * 260)).padStart(3, '0');
+            v.className = 'mm-read';
+            sndTick();
+        } else { // estabiliza
+            v.textContent = String(real).padStart(3, '0');
+            v.className = 'mm-read ' + (broken ? 'low' : 'high');
+            pano.measuredCell = i;
+            startMeterTone(broken);
+            stopMeasure();
+        }
+    }, 60);
+}
 function panelHover(i) {
     if (!pano || pano.phase !== 'find') return;
-    const v = $('mm-read');
-    if (i === pano.broken) {
-        v.textContent = String(1 + Math.floor(Math.random() * 5)).padStart(3, '0');
-        v.className = 'mm-read low';
-    } else {
-        v.textContent = String(215 + Math.floor(Math.random() * 25));
-        v.className = 'mm-read high';
-    }
+    if (pano.hoverCell === i) return; // ja medindo este
+    pano.hoverCell = i;
+    startMeasure(i);
+}
+function panelGridLeave() {
+    if (!pano || pano.phase !== 'find') return;
+    pano.hoverCell = null; stopMeasure(); stopMeterTone();
+    const v = $('mm-read'); v.textContent = '000'; v.className = 'mm-read';
+}
+function panelCleanup() {
+    stopMeasure(); stopMeterTone();
+    const pb = $('mm-probe'); if (pb) pb.style.display = 'none';
 }
 function panelClickCell(i) {
     if (!pano || pano.phase !== 'find') return;
-    if (i !== pano.broken) { sndError(); return finish(false); } // painel errado = choque
-    // entra em reparo
-    sndClick();
-    const pb = $('mm-probe'); if (pb) pb.style.display = 'none'; // guarda a ponteira no reparo
-    pano.phase = 'removing';
-    $('panel-grid').classList.add('hidden');
-    $('panel-service').classList.remove('hidden');
-    $('service-step').textContent = 'Remova os 4 parafusos';
-    $('panel-progress').textContent = 'Reparando painel';
+    const cell = document.querySelector(`#panel-grid .pano[data-i="${i}"]`);
+    if (i === pano.broken) { // achou o defeituoso -> reparo
+        sndClick(); panelCleanup();
+        pano.phase = 'removing';
+        $('panel-grid').classList.add('hidden');
+        $('panel-service').classList.remove('hidden');
+        $('service-step').textContent = 'Remova os 4 parafusos';
+        $('panel-progress').textContent = 'Reparando disjuntor';
+        return;
+    }
+    // B: errar NAO falha na hora — da tentativas
+    sndError();
+    if (cell) { cell.classList.add('wrong'); setTimeout(() => cell.classList.remove('wrong'), 400); }
+    pano.wrong++;
+    const left = (pano.maxWrong + 1) - pano.wrong;
+    if (left <= 0) return finish(false); // estourou as tentativas -> choque
+    $('panel-progress').textContent = `Tensao normal aqui. Continue medindo (${left} tentativa${left > 1 ? 's' : ''}).`;
 }
 function panelScrew(el) {
     if (!pano) return;
@@ -705,6 +766,7 @@ $('panel-grid').addEventListener('mousemove', (e) => {
 $('panel-grid').addEventListener('click', (e) => {
     const cell = e.target.closest('.pano'); if (cell) panelClickCell(parseInt(cell.dataset.i));
 });
+$('panel-grid').addEventListener('mouseleave', panelGridLeave);
 document.querySelectorAll('#panel-service .screw').forEach(sc => {
     sc.addEventListener('click', () => panelScrew(sc));
 });
