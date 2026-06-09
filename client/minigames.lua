@@ -9,7 +9,21 @@ local NUI_GAMES = {
     welding = { action = 'START_WELD',   cfg = 'welding' },
     panel   = { action = 'START_PANEL',  cfg = 'panel' },
     wiring  = { action = 'START_WIRING', cfg = 'wiring' },
+    hammer  = { action = 'START_HAMMER', cfg = 'hammer' },
 }
+
+--- Roda um minigame NUI ESPECIFICO com settings explicitas (ex.: BuildTask -> hammer).
+--- @param kind string   ex.: 'hammer'
+--- @param settings table
+--- @param cb fun(success: boolean)
+function StartNamedMinigame(kind, settings, cb)
+    local nui = NUI_GAMES[kind]
+    if not nui then return StartSkillcheck(nil, cb) end
+    nuiCb = cb
+    PlayWorkAnim()
+    SetNuiFocus(true, true)
+    SendNUIMessage({ action = nui.action, settings = settings or {} })
+end
 
 --- Roda o minigame da tarefa e chama cb(success).
 --- @param taskType string  ex.: 'fixStreetLamp'

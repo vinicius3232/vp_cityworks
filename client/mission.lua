@@ -339,6 +339,19 @@ function BuildTask(target)
         return
     end
     local b = (ActiveDiscipline and ActiveDiscipline.build and ActiveDiscipline.build[target.type]) or {}
+
+    -- minigame do Construtor (martelar pregos) antes de erguer o prop, se configurado
+    if b.minigame then
+        StartNamedMinigame(b.minigame, { nails = b.nails or 3, time = b.minigameTime or 22, maxFails = b.maxFails or 4 }, function(ok)
+            if ok then
+                TriggerServerEvent('vp_cityworks:completeTarget', target.id, true)
+            else
+                TriggerServerEvent('vp_cityworks:closeTarget', target.id)
+            end
+        end)
+        return
+    end
+
     SendNUIMessage({ action = 'SFX', sfx = 'build', play = true })
     local ok = lib.progressBar({
         duration = b.time or 6000,

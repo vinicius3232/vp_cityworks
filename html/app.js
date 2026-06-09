@@ -83,11 +83,12 @@ function post(name, data) {
     }).catch(() => {});
 }
 function hideAll() {
-    ['weld', 'panel', 'wiring'].forEach(id => $(id).classList.add('hidden'));
+    ['weld', 'panel', 'wiring', 'hammer'].forEach(id => $(id).classList.add('hidden'));
 }
 function finish(success) {
     if (!active) return;
     if (active === 'weld') weldCleanup();
+    if (active === 'hammer') hammerCleanup();
     active = null;
     hideAll();
     post('minigameResult', { success: !!success });
@@ -418,6 +419,53 @@ function wiringUp(e) {
 }
 
 /* ============================================================
+   4) MARTELO / CONSTRUTOR — pressione a tecla certa p/ martelar
+============================================================ */
+let hammer = null;
+const HAMMER_KEYS = ['Q', 'E', 'R', 'F'];
+
+function openHammer(s) {
+    active = 'hammer';
+    hammer = { total: Math.max(1, s.nails || 3), done: 0, fails: 0, maxFails: s.maxFails || 4, key: null, timeout: null };
+    $('hammer-progress').textContent = `0 / ${hammer.total}`;
+    $('hammer-nail').style.transform = 'translateX(-50%) translateY(0px)';
+    $('hammer').classList.remove('hidden');
+    hammerNextKey();
+    hammer.timeout = setTimeout(() => { if (active === 'hammer') finish(false); }, (s.time || 22) * 1000);
+}
+function hammerNextKey() {
+    hammer.key = HAMMER_KEYS[Math.floor(Math.random() * HAMMER_KEYS.length)];
+    const k = $('hammer-key'); k.textContent = hammer.key; k.className = 'hammer-key';
+}
+function hammerSwing() {
+    const t = $('hammer-tool'); t.classList.add('swing');
+    setTimeout(() => t.classList.remove('swing'), 90);
+}
+function hammerKey(e) {
+    if (active !== 'hammer' || !hammer || !hammer.key) return;
+    const key = (e.key || '').toUpperCase();
+    if (!HAMMER_KEYS.includes(key)) return; // ESC e tratado no handler global
+    const cap = $('hammer-key');
+    if (key === hammer.key) {
+        hammerSwing(); beep(150, 0.07, 'square', 0.14);
+        cap.classList.add('hit');
+        hammer.done++;
+        $('hammer-progress').textContent = `${hammer.done} / ${hammer.total}`;
+        $('hammer-nail').style.transform = `translateX(-50%) translateY(${Math.round(hammer.done / hammer.total * 44)}px)`;
+        if (hammer.done >= hammer.total) { hammer.key = null; sndConnect(); return setTimeout(() => finish(true), 200); }
+        setTimeout(hammerNextKey, 150);
+    } else {
+        cap.classList.add('miss'); sndError(); hammer.fails++;
+        setTimeout(() => cap.classList.remove('miss'), 220);
+        if (hammer.fails >= hammer.maxFails) finish(false);
+    }
+}
+function hammerCleanup() {
+    if (hammer && hammer.timeout) clearTimeout(hammer.timeout);
+    hammer = null;
+}
+
+/* ============================================================
    ROTEADOR + EVENTOS GLOBAIS
 ============================================================ */
 window.addEventListener('message', (ev) => {
@@ -426,6 +474,7 @@ window.addEventListener('message', (ev) => {
         case 'START_WELD':   openWeld(d.settings || {}); break;
         case 'START_PANEL':  openPanel(d.settings || {}); break;
         case 'START_WIRING': openWiring(d.settings || {}); break;
+        case 'START_HAMMER': openHammer(d.settings || {}); break;
         case 'CLOSE':        finish(false); break;
         case 'HUD_SHOW':     hudShow(d.tasks, d.players); break;
         case 'HUD_TASKS':    hudTasks(d.tasks); break;
@@ -589,3 +638,4 @@ document.addEventListener('mouseup', (e) => {
     if (active === 'weld') return weldUp(e);
 });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && active) finish(false); });
+document.addEventListener('keydown', (e) => { if (active === 'hammer') hammerKey(e); });

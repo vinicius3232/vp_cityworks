@@ -347,8 +347,10 @@ Config.Disciplines = {
         targetRadius = { scaffold = 3.0, wall = 3.0, delivery = 10.0 },
         taskMode = { scaffold = 'build', wall = 'build' },
         build = {
-            scaffold = { time = 8000, prop = `prop_scaffold_02a`, zOffset = 1.0, heading = 0.0 },
-            wall     = { time = 6000, prop = `prop_barrier_work05`, zOffset = 1.0, heading = 0.0 },
+            -- minigame = 'hammer' -> roda o NUI do Construtor (martelar pregos)
+            -- antes de erguer o prop. nails = qtde de pregos. Remova p/ usar so progressbar.
+            scaffold = { time = 8000, prop = `prop_scaffold_02a`, zOffset = 1.0, heading = 0.0, minigame = 'hammer', nails = 4 },
+            wall     = { time = 6000, prop = `prop_barrier_work05`, zOffset = 1.0, heading = 0.0, minigame = 'hammer', nails = 3 },
         },
         regions = {
             {

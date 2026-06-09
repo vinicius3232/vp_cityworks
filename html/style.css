@@ -238,6 +238,59 @@ html, body {
 .cable.tmp { opacity: .92; }
 
 /* ============================================================
+   4) MARTELO / CONSTRUTOR
+============================================================ */
+.hammer-stage {
+    width: 40vw; max-width: 660px; text-align: center;
+    background: linear-gradient(160deg, #2b2f36 0%, #1c1f24 100%);
+    border: 2px solid #0c0d10; border-radius: 10px;
+    box-shadow: 0 0 0 6px rgba(0,0,0,.35), 0 24px 60px rgba(0,0,0,.6);
+    padding: 1.2vw 1.4vw; color: #e7e9ec;
+}
+.hammer-title { font-weight: 800; letter-spacing: 2px; font-size: 1.2vw; color: #ffcf24; text-shadow: 0 0 12px rgba(255,207,36,.35); }
+.hammer-hint { font-size: .8vw; opacity: .72; margin: .5vw 0 1vw; }
+.hammer-hint b { color: #2dff42; }
+.hammer-scene {
+    position: relative; height: 15vw; border-radius: 8px; overflow: hidden;
+    display: flex; align-items: flex-end; justify-content: center;
+    background: radial-gradient(120% 90% at 50% 0%, #2a2e34, #14171b);
+    border: 2px solid #15171a; box-shadow: inset 0 0 26px rgba(0,0,0,.5);
+}
+.hammer-tool {
+    position: absolute; top: 1vw; left: 50%; font-size: 5.5vw; line-height: 1;
+    transform: translateX(-22%) rotate(-14deg); transform-origin: 78% 88%;
+    transition: transform .1s ease-in; filter: drop-shadow(0 6px 10px rgba(0,0,0,.55));
+}
+.hammer-tool.swing { transform: translateX(-22%) rotate(42deg); transition: transform .06s ease-out; }
+.hammer-beam {
+    position: relative; width: 58%; height: 3.4vw; margin-bottom: 2.2vw; border-radius: 4px;
+    background: repeating-linear-gradient(90deg, #7a4a23 0 16px, #6a3e1c 16px 32px), linear-gradient(#8a5a2c, #6a3e1c);
+    border: 2px solid #3a230f; box-shadow: inset 0 0 14px rgba(0,0,0,.45);
+}
+.hammer-nail {
+    position: absolute; left: 50%; top: -2.8vw; width: .55vw; height: 3vw;
+    transform: translateX(-50%) translateY(0); transition: transform .12s ease-out;
+    background: linear-gradient(#dfe3e8, #8a9098); border-radius: 1px; box-shadow: 0 1px 2px rgba(0,0,0,.4);
+}
+.hammer-nail::before {
+    content: ''; position: absolute; top: -.3vw; left: 50%; transform: translateX(-50%);
+    width: 1.4vw; height: .5vw; border-radius: 2px; background: linear-gradient(#eef1f4, #9aa0a8);
+    box-shadow: 0 1px 2px rgba(0,0,0,.5);
+}
+.hammer-key {
+    position: absolute; right: 2vw; top: 50%; transform: translateY(-50%);
+    width: 3vw; height: 3vw; border-radius: 8px; font-weight: 800; font-size: 1.6vw;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(180deg, #2b2f36, #15171a); border: 2px solid #ffcf24; color: #ffcf24;
+    box-shadow: 0 0 14px rgba(255,207,36,.3);
+}
+.hammer-key.hit  { animation: keyHit .16s; }
+.hammer-key.miss { animation: keyMiss .22s; }
+@keyframes keyHit  { 50% { transform: translateY(-50%) scale(.82); background: #2dff42; color: #0c0d10; border-color: #2dff42; } }
+@keyframes keyMiss { 25% { transform: translateY(-50%) translateX(-7px); } 75% { transform: translateY(-50%) translateX(7px); } }
+.hammer-foot { display: flex; align-items: center; justify-content: space-between; margin-top: .9vw; font-size: .85vw; }
+
+/* ============================================================
    HUD ao vivo (canto superior direito, sem foco)
 ============================================================ */
 .hud {

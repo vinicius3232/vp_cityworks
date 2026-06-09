@@ -67,13 +67,14 @@ Falha de minigame → `ApplyShockDamage` (`-10..25 HP`). Conclusão centralizada
 
 ---
 
-## 5. Os 3 minigames (NUI custom — `html/`)
+## 5. Os 4 minigames (NUI custom — `html/`)
 
 Reescritos do zero. Visual CSS, **áudio sintetizado (WebAudio)**, sem assets proprietários. Resultado unificado: `POST minigameResult { success }`.
 
 - **Solda** (`welding`) — **traçar a trinca**: segurar e arrastar o maçarico sobre a linha em zigue-zague (projeção no caminho, avanço monotônico) enquanto o metal derretido preenche atrás com brilho + faíscas; sair da linha esfria (penalidade) → perde tentativa; timer. Settings: `wireCount` (nº de costuras), `maxFails`, `time`.
 - **Painel/Voltímetro** (`panel`) — **quadro de disjuntores** (caixa esverdeada, breakers com alavanca/parafuso); passar o voltímetro, achar o de voltagem **anormal** → remover 4 parafusos → trocar switch → reapertar.
 - **Fiação** (`wiring`) — **cabos grossos curvados** (bézier, pontas de cobre desencapadas + terminais) arrastados ao conector da **mesma cor** do outro lado.
+- **Martelo/Construtor** (`hammer`) — pressionar a **tecla destacada** (Q/E/R/F) para martelar; cada acerto crava o prego + balanço do martelo; erro = penalidade (`maxFails`). Settings: `nails`, `maxFails`, `time`. Usado pelo modo `build` quando `disc.build[task].minigame = 'hammer'` (via `StartNamedMinigame`); também disponível como `kind` normal em `byTask`.
 
 Seleção por tarefa: `discipline.minigames.byTask`. Fallback `skillcheck` (ox_lib).
 
