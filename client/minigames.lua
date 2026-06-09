@@ -22,11 +22,52 @@ end
 function StartMinigame(taskType, cb)
     local mg = discMinigames()
     local kind = (mg.byTask and mg.byTask[taskType]) or 'skillcheck'
+
+    -- 1) minigame de lib EXTERNA (opt-in via Config.ExternalMinigames)
+    local ext = Config.ExternalMinigames
+    if ext and ext.enable and ext.games and ext.games[kind] then
+        return StartExternal(ext.games[kind], taskType, cb)
+    end
+
+    -- 2) NUI custom (solda/painel/fiacao)
     local nui = NUI_GAMES[kind]
     if nui then
         return StartNuiGame(nui, taskType, cb)
     end
+
+    -- 3) fallback: skillcheck do ox_lib
     return StartSkillcheck(taskType, cb)
+end
+
+---------------------------------------------------------------------
+-- PONTE p/ MINIGAME EXTERNO (bl_ui / glitch / etc.)
+-- spec = { resource, export, iterations, config }. Chama o export real
+-- e trata o retorno booleano. Se a lib nao estiver ligada ou o export
+-- falhar, cai no skillcheck (o jogador NUNCA fica preso).
+---------------------------------------------------------------------
+function StartExternal(spec, taskType, cb)
+    if type(spec) ~= 'table' or not spec.resource or not spec.export then
+        return StartSkillcheck(taskType, cb)
+    end
+    if GetResourceState(spec.resource) ~= 'started' then
+        print(('^3[vp_cityworks]^0 minigame externo "%s" indisponivel (%s nao iniciado); usando skillcheck.')
+            :format(spec.export, spec.resource))
+        return StartSkillcheck(taskType, cb)
+    end
+
+    PlayWorkAnim()
+    local ok, ret = pcall(function()
+        local fn = exports[spec.resource][spec.export]
+        return fn(spec.iterations or 1, spec.config or {})
+    end)
+    StopWorkAnim()
+
+    if not ok then
+        print(('^1[vp_cityworks]^0 erro no minigame externo %s:%s — caindo no skillcheck.')
+            :format(spec.resource, spec.export))
+        return StartSkillcheck(taskType, cb)
+    end
+    cb(ret == true)
 end
 
 ---------------------------------------------------------------------

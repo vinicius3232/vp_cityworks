@@ -30,6 +30,7 @@ entrega o veículo no depot → **recompensa** (dinheiro dividido + XP, multipli
 - **Multi-framework** (QBox/QBCore/ESX, auto-detect via `shared/framework.lua`).
 - **Motor por frente** (`Config.Disciplines`) com 4 modos de tarefa: `minigame` (3 NUI: solda/voltímetro/fiação),
   `drill` (alvo com vida + SFX britadeira), `build` (progress+props + SFX martelo), `tow` (guincho/flatbed + SFX winch).
+- **Minigames**: 3 NUI próprios (solda/voltímetro/fiação) + **ponte opcional p/ libs externas** (`Config.ExternalMinigames`, ex.: bl_ui/glitch) por 1 export, com fallback automático pro skillcheck.
 - **Menu em NUI custom** (não ox_lib): frentes, contratos, equipe, boss split.
 - **Dispatch** (`/pedirservico`): cidadão chama, equipe em serviço recebe o chamado.
 - **Hardening completo** (`server/security.lua`): rate limit + guards de tipo + proximity em todos os eventos.

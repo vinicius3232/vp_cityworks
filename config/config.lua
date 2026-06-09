@@ -91,6 +91,51 @@ Config.Minigames = {
 }
 
 ---------------------------------------------------------------------
+-- MINIGAMES EXTERNOS (ponte opcional p/ libs de terceiros) ----------
+---------------------------------------------------------------------
+-- Permite que qualquer tarefa use um minigame de uma lib externa via
+-- export, sem nova dependencia obrigatoria. Se desligado (ou a lib
+-- ausente / export com erro), cai no fallback (lib.skillCheck do ox_lib)
+-- e o jogador NUNCA trava. O servidor continua validando tudo
+-- (proximity, cooldown, minSeconds) — a ponte e so client-side.
+--
+-- Como usar:
+--   1) instale a lib (ex.: bl_ui) e de ensure;
+--   2) Config.ExternalMinigames.enable = true;
+--   3) aponte a tarefa: discipline.minigames.byTask[task] = 'bl_untangle'
+--      (a chave abaixo em .games). Ex. ja preparado: frente "towers".
+--
+-- ⚠️ ANTI-ALUCINACAO: as assinaturas abaixo foram tiradas do CODIGO REAL
+-- do bl_ui (MIT) — cada jogo e `exports.bl_ui:Nome(iterations, config)` e
+-- retorna boolean (Citizen.Await sincrono). Para OUTRAS libs (glitch etc.)
+-- confirme a assinatura na versao instalada antes de habilitar.
+--
+-- Tipos de config do bl_ui (referencia, confirme em docs.byte-labs.net):
+--   DifficultyConfig    = { difficulty=number }
+--   KeyDifficultyConfig = { difficulty=number, numberOfKeys=number }
+--   LengthConfig        = { length=number, duration=number }
+--   LevelConfig         = { level=number, duration=number }
+--   GridConfig          = { grid=number, duration=number, target=number }
+--   NodeConfig          = { numberOfNodes=number, duration=number, previewDuration?=number }
+Config.ExternalMinigames = {
+    enable = false, -- liga o uso de libs externas
+
+    -- chave -> spec de chamada (data-only; provider-agnostic).
+    -- A ponte chama: exports[resource][export](iterations, config) -> boolean
+    games = {
+        -- bl_ui (MIT) — assinaturas confirmadas no codigo-fonte:
+        bl_untangle  = { resource = 'bl_ui', export = 'Untangle',  iterations = 1, config = { numberOfNodes = 6, duration = 20 } },
+        bl_circlesum = { resource = 'bl_ui', export = 'CircleSum',  iterations = 3, config = { length = 5, duration = 10 } },
+        bl_lightsout = { resource = 'bl_ui', export = 'LightsOut',  iterations = 1, config = { level = 3, duration = 30 } },
+        bl_keyspam   = { resource = 'bl_ui', export = 'KeySpam',    iterations = 1, config = { difficulty = 3, numberOfKeys = 4 } },
+
+        -- glitch-minigames (GPL-3.0) — exemplo; ⚠️ confirme assinatura/retorno
+        -- na versao instalada antes de usar:
+        -- glitch_circuit = { resource = 'glitch-minigames', export = 'StartCircuitRumble', iterations = 1, config = {} },
+    },
+}
+
+---------------------------------------------------------------------
 -- PROGRESSAO (compartilhada entre frentes)
 ---------------------------------------------------------------------
 Config.MaxLevel = 70
@@ -438,7 +483,10 @@ Config.Disciplines = {
         requiresEquipment = {}, -- reparo no solo (base da torre); sem escada/lift
         taskMode = { fix = 'minigame' },
         minigames = {
-            byTask = { fix = 'wiring' }, -- reconfigurar a antena (minigame de fiacao)
+            -- 'wiring' = nosso NUI de fiacao. Para um "hack de antena" com lib
+            -- externa, ligue Config.ExternalMinigames.enable e troque por uma
+            -- chave de .games, ex.: byTask = { fix = 'bl_untangle' }.
+            byTask = { fix = 'wiring' },
             wiring = { fix = { count = 5 }, default = { count = 4 } },
         },
         -- INTEGRACAO com vp_towers (resource separado; exports server-side)

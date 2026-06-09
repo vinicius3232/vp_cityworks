@@ -77,6 +77,17 @@ Reescritos do zero. Visual CSS, **áudio sintetizado (WebAudio)**, sem assets pr
 
 Seleção por tarefa: `discipline.minigames.byTask`. Fallback `skillcheck` (ox_lib).
 
+### 5.1 Ponte de minigames externos (`Config.ExternalMinigames`)
+
+Opt-in (`enable=false` por padrão). Permite que qualquer tarefa use minigames de **libs de terceiros** por export, sem nova dependência obrigatória.
+
+- O roteador `StartMinigame` checa, **antes** dos NUI próprios, se o `kind` (valor em `byTask`) é uma chave em `Config.ExternalMinigames.games`. Se for → `StartExternal(spec)`.
+- `spec = { resource, export, iterations, config }`. A ponte chama `exports[resource][export](iterations, config)` (via `pcall`) e trata o retorno **booleano** como sucesso.
+- **Fallback robusto**: lib não iniciada ou export com erro → cai no `lib.skillCheck`. O jogador **nunca trava**.
+- **Server-authoritative intacto**: a ponte é só client; o servidor segue validando `minSeconds`/proximity/`openBy` em `completeTarget`.
+- **Presets prontos (bl_ui, MIT)** — assinaturas tiradas do código-fonte real: `Untangle`/`CircleSum`/`LightsOut`/`KeySpam` = `exports.bl_ui:Game(iterations, config) → boolean`. Para outras libs (glitch GPL-3.0 etc.), confirme a assinatura na versão instalada antes de habilitar.
+- **Como ligar numa tarefa**: `discipline.minigames.byTask[task] = 'bl_untangle'` (chave de `.games`). Ex. já preparado/comentado na frente `towers` ("hack de antena").
+
 ---
 
 ## 6. Guincho (`kind='towing'`)
@@ -149,6 +160,8 @@ O servidor é a única fonte de verdade. **Nunca confia** em coords/identificado
 | `Equipment` | escada/lift |
 | `WorkClothes` / `RedArrowMarker` | cloakroom / seta |
 | `Minigames.failDamage` / `minSeconds` | dano / anti-skip |
+| `ExternalMinigames` | ponte opcional p/ libs externas (bl_ui/glitch) por export |
+| `TowerWear` | desgaste opcional das torres do `vp_towers` |
 | `MaxLevel` / `RequiredXP` | progressão |
 | `LogWebhookConvar` | webhook por convar |
 
