@@ -374,25 +374,28 @@ function centerOf(el) {
     const r = el.getBoundingClientRect(), s = svgRect();
     return { x: r.left + r.width / 2 - s.left, y: r.top + r.height / 2 - s.top };
 }
-function mkLine(x1, y1, color) {
-    const ln = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    ln.setAttribute('x1', x1); ln.setAttribute('y1', y1);
-    ln.setAttribute('x2', x1); ln.setAttribute('y2', y1);
-    ln.setAttribute('stroke', color); ln.setAttribute('stroke-width', '5');
-    ln.setAttribute('stroke-linecap', 'round');
-    $('wiring-svg').appendChild(ln);
-    return ln;
+function mkCable(color) {
+    const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    p.setAttribute('class', 'cable tmp');
+    p.setAttribute('stroke', color);
+    $('wiring-svg').appendChild(p);
+    return p;
+}
+// curva do cabo: bezier com controle horizontal (cruzamento suave estilo painel real)
+function cableD(x1, y1, x2, y2) {
+    const dx = Math.abs(x2 - x1) * 0.5 + 12;
+    return `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
 }
 function wiringStart(e, plug) {
     if (!wiring || plug.classList.contains('done')) return;
     const c = centerOf(plug);
-    dragWire = { plug, line: mkLine(c.x, c.y, PALETTE[plug.dataset.color].c) };
+    dragWire = { plug, x1: c.x, y1: c.y, path: mkCable(PALETTE[plug.dataset.color].c) };
+    dragWire.path.setAttribute('d', cableD(c.x, c.y, c.x, c.y));
 }
 function wiringMove(e) {
     if (!dragWire) return;
     const s = svgRect();
-    dragWire.line.setAttribute('x2', e.clientX - s.left);
-    dragWire.line.setAttribute('y2', e.clientY - s.top);
+    dragWire.path.setAttribute('d', cableD(dragWire.x1, dragWire.y1, e.clientX - s.left, e.clientY - s.top));
 }
 function wiringUp(e) {
     if (!dragWire) return;
@@ -401,7 +404,8 @@ function wiringUp(e) {
     if (target && target.classList.contains('socket') && !target.classList.contains('done')
         && target.dataset.color === plug.dataset.color) {
         const c = centerOf(target);
-        dragWire.line.setAttribute('x2', c.x); dragWire.line.setAttribute('y2', c.y);
+        dragWire.path.setAttribute('d', cableD(dragWire.x1, dragWire.y1, c.x, c.y));
+        dragWire.path.classList.remove('tmp');
         plug.classList.add('done'); target.classList.add('done');
         sndConnect(); wiring.connected++;
         $('wiring-progress').textContent = `${wiring.connected} / ${wiring.count}`;
@@ -409,8 +413,8 @@ function wiringUp(e) {
         if (wiring.connected >= wiring.count) finish(true);
         return;
     }
-    // errou: remove a linha temporaria
-    dragWire.line.remove(); dragWire = null;
+    // errou: remove o cabo temporario
+    dragWire.path.remove(); dragWire = null;
 }
 
 /* ============================================================

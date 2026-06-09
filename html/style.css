@@ -122,21 +122,34 @@ html, body {
 /* ============================================================
    2) VOLTIMETRO / PAINEL
 ============================================================ */
+/* quadro de disjuntores */
 .grid {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: .8vw;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: .7vw;
+    padding: 1vw; border-radius: 8px;
+    background: linear-gradient(160deg, #243027, #151d18);
+    border: 2px solid #0c0d10; box-shadow: inset 0 0 26px rgba(0,0,0,.6);
 }
+/* disjuntor (breaker) branco com alavanca + parafuso */
 .pano {
-    height: 4.2vw; border-radius: 6px;
-    background: linear-gradient(150deg, #3a3f47, #23262b);
-    border: 2px solid #0c0d10; box-shadow: inset 0 0 8px rgba(0,0,0,.5);
-    cursor: crosshair; position: relative; transition: filter .1s, box-shadow .1s;
+    height: 5.4vw; border-radius: 5px; position: relative; cursor: crosshair; overflow: hidden;
+    background:
+        linear-gradient(180deg, #34373c 0 14%, rgba(0,0,0,0) 14% 86%, #34373c 86% 100%),
+        linear-gradient(180deg, #f2f1ec, #c9c8c0);
+    border: 1px solid #93918a; box-shadow: 0 1px 2px rgba(0,0,0,.5);
+    transition: filter .1s, box-shadow .1s;
 }
-.pano::before {
-    content: ''; position: absolute; inset: 22%;
-    border-radius: 4px; background: rgba(0,0,0,.25);
-    border: 1px solid rgba(255,255,255,.06);
+.pano::before { /* alavanca do disjuntor */
+    content: ''; position: absolute; left: 50%; top: 38%; transform: translateX(-50%);
+    width: 1.3vw; height: 1.7vw; border-radius: 3px;
+    background: linear-gradient(180deg, #2a2d33, #101113); border: 1px solid #0c0d10;
+    box-shadow: inset 0 .25vw 0 rgba(255,255,255,.1), 0 .15vw .3vw rgba(0,0,0,.5);
 }
-.pano:hover { filter: brightness(1.2); box-shadow: inset 0 0 8px rgba(0,0,0,.5), 0 0 0 2px #ffcf24; }
+.pano::after { /* parafuso no terminal superior */
+    content: ''; position: absolute; left: 50%; top: .45vw; transform: translateX(-50%);
+    width: .7vw; height: .7vw; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #b9bcc2, #5a5d63 70%); border: 1px solid #2a2d33;
+}
+.pano:hover { filter: brightness(1.05); box-shadow: 0 0 0 2px #ffcf24, 0 1px 2px rgba(0,0,0,.5); }
 .volt-read.low  { color: #ff4545; }
 .volt-read.high { color: #2dff42; }
 
@@ -173,26 +186,56 @@ html, body {
 .service-cover:hover { filter: brightness(1.2); box-shadow: 0 0 0 2px #2dff42; }
 
 /* ============================================================
-   3) FIACAO / ARRASTAR FIOS
+   3) FIACAO — cabos grossos curvados + pontas de cobre
 ============================================================ */
-.wiring-cabinet { width: 40vw; }
-.wiring-area { position: relative; display: flex; justify-content: space-between; height: 16vw; padding: 0 1vw; }
-.wiring-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
-.wcol { display: flex; flex-direction: column; justify-content: space-around; z-index: 2; }
-.node {
-    width: 2.2vw; height: 2.2vw; border-radius: 50%;
-    border: 3px solid #0c0d10; box-shadow: inset 0 0 6px rgba(0,0,0,.6);
-    position: relative; background: var(--c);
+.wiring-cabinet { width: 44vw; }
+.wiring-area {
+    position: relative; display: flex; justify-content: space-between;
+    height: 17vw; border-radius: 8px; overflow: hidden;
+    background: radial-gradient(130% 100% at 50% 0%, #1b1d22, #0c0d10);
+    border: 2px solid #15171a; box-shadow: inset 0 0 30px rgba(0,0,0,.6);
 }
+.wiring-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+.wcol {
+    display: flex; flex-direction: column; justify-content: space-around;
+    z-index: 2; padding: 1vw .9vw;
+    background: linear-gradient(180deg, #2b2f36, #1c1f24);
+}
+.wcol.left  { border-right: 3px solid #0c0d10; }
+.wcol.right { border-left: 3px solid #0c0d10; }
+
+/* ponta do cabo (conector colorido) */
+.node {
+    width: 2.4vw; height: 2.4vw; border-radius: 50%;
+    border: .32vw solid #15171a; position: relative;
+    background: radial-gradient(circle at 34% 28%, rgba(255,255,255,.55), transparent 46%), var(--c);
+    box-shadow: inset 0 0 7px rgba(0,0,0,.6), 0 2px 4px rgba(0,0,0,.5);
+}
+/* bloco de terminal (amarelo) atras do conector */
+.node::before {
+    content: ''; position: absolute; top: 50%; width: 1vw; height: 1.7vw;
+    transform: translateY(-50%); z-index: -2; border: 1px solid #0c0d10; border-radius: 2px;
+    background: linear-gradient(#e0bd45, #94770f);
+}
+/* tranca de cobre desencapada apontando p/ dentro */
+.node::after {
+    content: ''; position: absolute; top: 50%; width: 1.5vw; height: .85vw; transform: translateY(-50%);
+    z-index: -1; border-radius: 2px; opacity: .9;
+    background: repeating-linear-gradient(90deg, #e8973f 0 2px, #a85f23 2px 4px);
+}
+.plug::before   { right: -1.15vw; }
+.plug::after    { right: -1.7vw; }
+.socket::before { left:  -1.15vw; }
+.socket::after  { left:  -1.7vw; }
+
 .plug { cursor: grab; }
 .plug:active { cursor: grabbing; }
-.plug.done, .socket.done { box-shadow: 0 0 14px var(--c); }
+.plug.done, .socket.done { box-shadow: inset 0 0 7px rgba(0,0,0,.6), 0 0 16px var(--c); }
 .node.dim { filter: grayscale(.4) brightness(.7); }
-.socket::after {
-    content: ''; position: absolute; inset: 30%; border-radius: 50%;
-    background: #0c0d10;
-}
-.socket.done::after { background: var(--c); }
+
+/* cabos (bezier grosso com profundidade) */
+.cable { fill: none; stroke-width: 9; stroke-linecap: round; filter: drop-shadow(0 3px 3px rgba(0,0,0,.55)); }
+.cable.tmp { opacity: .92; }
 
 /* ============================================================
    HUD ao vivo (canto superior direito, sem foco)

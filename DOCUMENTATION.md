@@ -72,8 +72,8 @@ Falha de minigame → `ApplyShockDamage` (`-10..25 HP`). Conclusão centralizada
 Reescritos do zero. Visual CSS, **áudio sintetizado (WebAudio)**, sem assets proprietários. Resultado unificado: `POST minigameResult { success }`.
 
 - **Solda** (`welding`) — **traçar a trinca**: segurar e arrastar o maçarico sobre a linha em zigue-zague (projeção no caminho, avanço monotônico) enquanto o metal derretido preenche atrás com brilho + faíscas; sair da linha esfria (penalidade) → perde tentativa; timer. Settings: `wireCount` (nº de costuras), `maxFails`, `time`.
-- **Painel/Voltímetro** (`panel`) — achar o painel de voltagem **anormal** → parafusos → switch → reapertar.
-- **Fiação** (`wiring`) — arrastar cada fio ao conector da **mesma cor** (linhas SVG).
+- **Painel/Voltímetro** (`panel`) — **quadro de disjuntores** (caixa esverdeada, breakers com alavanca/parafuso); passar o voltímetro, achar o de voltagem **anormal** → remover 4 parafusos → trocar switch → reapertar.
+- **Fiação** (`wiring`) — **cabos grossos curvados** (bézier, pontas de cobre desencapadas + terminais) arrastados ao conector da **mesma cor** do outro lado.
 
 Seleção por tarefa: `discipline.minigames.byTask`. Fallback `skillcheck` (ox_lib).
 
