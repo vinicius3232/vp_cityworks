@@ -127,6 +127,7 @@ end)
 RegisterNetEvent('vp_cityworks:closeTarget', function(targetId)
     local src = source
     if type(targetId) ~= 'number' then return end
+    if not Security.canAct(src, 'closeTarget', 300) then return end
     local lobby, cid = vpGetLobbyBySrc(src)
     if not lobby or not lobby.mission then return end
     local target = lobby.mission.targets[targetId]

@@ -215,10 +215,26 @@ CreateThread(function()
                     local dist = #(pc - target.coords)
                     local radius = (ActiveDiscipline and ActiveDiscipline.targetRadius[target.type]) or 3.0
                     -- seta vermelha alta (visivel de longe)
-                    if Config.RedArrowMarker and dist < 50.0 then
+                    if Config.RedArrowMarker and dist < 35.0 then
                         sleep = 0
                         DrawMarker(0, target.coords.x, target.coords.y, target.coords.z + 2.4,
                             0,0,0, 0,0,0, 1.2,1.2,1.2, 220,30,30,200, true,true,2,nil,nil,false)
+                    end
+                    -- semaforo defeituoso pisca (entidade cacheada + throttle 250ms)
+                    if target.type == 'fixTrafficLamp' and dist < 30.0 then
+                        sleep = 0
+                        local now = GetGameTimer()
+                        if (target._nextFlicker or 0) <= now then
+                            target._nextFlicker = now + 250
+                            if not target._light or not DoesEntityExist(target._light) then
+                                local models = (ActiveDiscipline and ActiveDiscipline.trafficLightModels) or {}
+                                for _, model in ipairs(models) do
+                                    local l = GetClosestObjectOfType(target.coords.x, target.coords.y, target.coords.z, 8.0, model, false, false, false)
+                                    if l ~= 0 then target._light = l break end
+                                end
+                            end
+                            if target._light then SetEntityTrafficlightOverride(target._light, math.random(0, 2)) end
+                        end
                     end
                     local mode = target.mode or 'minigame'
                     if dist < 20.0 then
@@ -354,33 +370,6 @@ CreateThread(function()
                         if IsControlJustReleased(0, 38) then
                             TriggerServerEvent('vp_cityworks:deliverVehicle')
                             Wait(2000)
-                        end
-                    end
-                end
-            end
-        end
-        Wait(sleep)
-    end
-end)
-
----------------------------------------------------------------------
--- SEMAFORO PISCANDO (fixTrafficLamp defeituoso)
----------------------------------------------------------------------
-CreateThread(function()
-    while true do
-        local sleep = 1500
-        if JobActive and CurrentMission then
-            local pc = GetEntityCoords(cache.ped)
-            local models = ActiveDiscipline and ActiveDiscipline.trafficLightModels
-            if models then
-                for id, target in pairs(CurrentMission.targets) do
-                    if target.type == 'fixTrafficLamp' and not target.fixed and #(pc - target.coords) < 30.0 then
-                        sleep = 250
-                        for _, model in ipairs(models) do
-                            local light = GetClosestObjectOfType(target.coords.x, target.coords.y, target.coords.z, 8.0, model, false, false, false)
-                            if light ~= 0 then
-                                SetEntityTrafficlightOverride(light, math.random(0, 2))
-                            end
                         end
                     end
                 end
