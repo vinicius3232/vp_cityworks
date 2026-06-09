@@ -129,31 +129,44 @@ html, body {
     background: linear-gradient(160deg, #243027, #151d18);
     border: 2px solid #0c0d10; box-shadow: inset 0 0 26px rgba(0,0,0,.6);
 }
-/* disjuntor (breaker MCCB) branco: terminal -> chave OFF -> terminal */
+/* disjuntor DIN estilo DEP3: branco, LED verde, chave azul OFF, parafusos cruz */
 .pano {
-    height: 5.8vw; border-radius: 5px; position: relative; cursor: crosshair; overflow: hidden;
+    height: 6vw; border-radius: 4px; position: relative; cursor: none; overflow: hidden;
     display: flex; flex-direction: column; align-items: center; justify-content: space-between;
-    padding: .45vw 0;
-    background: linear-gradient(180deg, #fcfcf9 0%, #ecebe5 52%, #dad9d2 100%);
-    border: 1px solid #b3b1a8; box-shadow: 0 1px 2px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.75);
+    padding: .4vw 0;
+    background: linear-gradient(180deg, #ffffff 0%, #f1f1ee 55%, #e2e1db 100%);
+    border: 1px solid #b9b7af; box-shadow: 0 1px 2px rgba(0,0,0,.4), inset 0 1px 0 #fff;
     transition: filter .1s, box-shadow .1s;
 }
-/* parafusos de terminal (Line em cima, Load embaixo) */
+/* parafuso Pozidriv (terminais Line/Load) */
 .brk-screw {
-    width: .85vw; height: .85vw; border-radius: 50%; flex: 0 0 auto; position: relative;
-    background: radial-gradient(circle at 34% 30%, #d3d6da, #6a6d72 70%); border: 1px solid #4a4d52;
+    width: .95vw; height: .95vw; border-radius: 50%; flex: 0 0 auto; position: relative;
+    background: radial-gradient(circle at 36% 30%, #e6e9ec, #8d9197 68%, #686b70);
+    border: 1px solid #5a5d63; box-shadow: inset 0 0 2px rgba(0,0,0,.4);
 }
-.brk-screw::after { content: ''; position: absolute; inset: 30%; background: #34373c; border-radius: 1px; transform: rotate(38deg); }
-/* janela com a chave (OFF) */
+.brk-screw::after {
+    content: ''; position: absolute; inset: 24%;
+    background:
+        linear-gradient(#4a4d52, #4a4d52) center / 100% 24% no-repeat,
+        linear-gradient(#4a4d52, #4a4d52) center / 24% 100% no-repeat;
+}
+/* LED verde de status */
+.brk-led {
+    width: 1.1vw; height: .5vw; border-radius: 50%; flex: 0 0 auto;
+    background: radial-gradient(circle at 40% 35%, #b6ffb6, #18a818 72%);
+    box-shadow: 0 0 6px rgba(45,255,66,.7), inset 0 0 2px rgba(0,0,0,.3);
+}
+/* chave azul O·OFF */
 .brk-sw {
-    width: 1.6vw; height: 2vw; border-radius: 3px; position: relative;
-    background: linear-gradient(180deg, #2c2f35, #101316);
-    border: 1px solid #0c0d10; box-shadow: inset 0 .32vw 0 rgba(255,255,255,.09), inset 0 -.2vw .25vw rgba(0,0,0,.6);
+    width: 1.8vw; height: 2vw; border-radius: 3px; flex: 0 0 auto;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .44vw; font-weight: 800; letter-spacing: .3px; color: #dcebff;
+    background: linear-gradient(180deg, #3a8de0 0%, #1f5fae 100%);
+    border: 1px solid #164a8a; box-shadow: inset 0 .3vw 0 rgba(255,255,255,.28), inset 0 -.2vw .2vw rgba(0,0,0,.3);
 }
-.brk-sw::after { content: 'OFF'; position: absolute; top: .12vw; left: 0; right: 0; text-align: center; font-size: .42vw; font-weight: 800; letter-spacing: .4px; color: #ff5a5a; }
-.pano:hover { filter: brightness(1.04); box-shadow: 0 0 0 2px #ffcf24, 0 1px 2px rgba(0,0,0,.45); }
+.pano:hover { filter: brightness(1.03); box-shadow: 0 0 0 2px #ffcf24, 0 1px 2px rgba(0,0,0,.4); }
 /* hook opcional: usar uma FOTO no disjuntor (settings.image) */
-.pano.img { background-size: cover; background-position: center; padding: 0; }
+.pano.img { background: none; background-size: cover; background-position: center; padding: 0; }
 .pano.img > * { display: none; }
 
 /* layout: quadro a esquerda, multimetro a direita */

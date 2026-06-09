@@ -52,6 +52,8 @@ files {
     'html/index.html',
     'html/style.css',
     'html/app.js',
+    'html/img/*.png',
+    'html/img/*.jpg',
 }
 
 ui_page 'html/index.html'

@@ -281,8 +281,8 @@ function openPanel(s) {
         if (s.image) { // hook: foto propria/livre no disjuntor
             cell.classList.add('img');
             cell.style.backgroundImage = `url("${s.image}")`;
-        } else { // disjuntor desenhado (terminal -> chave OFF -> terminal)
-            cell.innerHTML = '<span class="brk-screw"></span><span class="brk-sw"></span><span class="brk-screw"></span>';
+        } else { // disjuntor desenhado (parafuso -> LED -> chave OFF -> parafuso)
+            cell.innerHTML = '<span class="brk-screw"></span><span class="brk-led"></span><span class="brk-sw">OFF</span><span class="brk-screw"></span>';
         }
         grid.appendChild(cell);
     }
