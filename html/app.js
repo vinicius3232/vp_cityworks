@@ -556,13 +556,29 @@ function closeMenu() {
     $('menu-split-box').classList.add('hidden');
     $('menu-split-box').innerHTML = '';
 }
+// avatar gerado a partir das iniciais (sem precisar de imagem do servidor)
+function avatarInitials(name) {
+    const parts = (name || '?').trim().split(/\s+/);
+    return ((parts[0] || '?')[0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
+}
+function avatarColor(name) {
+    let h = 0; for (let i = 0; i < (name || '').length; i++) h = (h * 31 + name.charCodeAt(i)) % 360;
+    return `hsl(${h}, 45%, 40%)`;
+}
+const brl = (n) => Number(n || 0).toLocaleString('pt-BR');
+
 function renderMenu(data) {
     menuState = data;
+    // ---- perfil ----
+    $('menu-sub').textContent = data.disciplineLabel || 'Departamento de Obras';
     $('menu-name').textContent = data.name || '—';
+    $('menu-money').textContent = '$' + brl(data.money);
     $('menu-lvl').textContent = 'Nv ' + (data.level || 1);
-    $('menu-money').textContent = '$' + Number(data.money || 0).toLocaleString('pt-BR');
+    const av = $('menu-avatar'); av.textContent = avatarInitials(data.name); av.style.background = avatarColor(data.name);
     $('menu-xp-bar').style.width = Math.min(100, ((data.xp || 0) / (data.nextXp || 1)) * 100) + '%';
+    $('menu-xp-text').textContent = brl(data.xp) + ' / ' + brl(data.nextXp) + ' XP';
 
+    // ---- frentes ----
     const dc = $('menu-disciplines'); dc.innerHTML = '';
     (data.disciplines || []).forEach(di => {
         const el = document.createElement('div');
@@ -572,32 +588,61 @@ function renderMenu(data) {
         dc.appendChild(el);
     });
 
+    // ---- contratos (cards) ----
+    const regions = data.regions || [];
+    $('menu-region-count').textContent = regions.length + ' ' + (regions.length === 1 ? 'região' : 'regiões');
     const rc = $('menu-regions'); rc.innerHTML = '';
-    (data.regions || []).forEach(r => {
+    regions.forEach(r => {
         const el = document.createElement('div');
         el.className = 'region-card' + (r.selected ? ' selected' : '') + (r.locked ? ' locked' : '');
-        el.innerHTML = `<div class="rc-title">${r.title}</div><div class="rc-info">` +
-            `<span class="rc-money">$${Number(r.money).toLocaleString('pt-BR')}</span>` +
-            `<span class="rc-xp">${r.xp} XP</span><span class="rc-lvl">Nv ${r.minLevel}</span></div>`;
+        const tasks = (r.tasks || []).map(t => `<div class="rc-task"><span class="rc-dot"></span>${t.count} ${t.label}</div>`).join('');
+        const badge = r.minLevel > 0
+            ? `<span class="rc-badge ${r.locked ? 'bad' : 'ok'}">Nv ${r.minLevel}</span>`
+            : `<span class="rc-badge ok">Sem nível</span>`;
+        el.innerHTML =
+            `<div class="rc-head"><span class="rc-title">${r.title}</span>${badge}</div>` +
+            `<div class="rc-chips"><span class="rc-money">$${brl(r.money)}</span>` +
+            `<span class="rc-xp">${brl(r.xp)} XP</span>` +
+            `<span class="rc-players">1-${r.maxPlayers || 4} 👷</span></div>` +
+            `<div class="rc-tasks">${tasks}</div>`;
         if (!r.locked) el.onclick = () => post('menuMission', { key: r.key });
         rc.appendChild(el);
     });
 
+    // ---- equipe ----
     const players = data.players || [];
     $('menu-team-count').textContent = '(' + players.length + '/' + (data.maxPlayers || 4) + ')';
     const pl = $('menu-players'); pl.innerHTML = '';
     players.forEach(p => {
         const el = document.createElement('div'); el.className = 'player-row';
-        el.innerHTML = `<span>${p.name} <span class="pr-owner">${p.owner ? '(dono)' : ''}</span></span>` +
+        el.innerHTML =
+            `<div class="pr-av" style="background:${avatarColor(p.name)}">${avatarInitials(p.name)}</div>` +
+            `<div class="pr-info"><span class="pr-name">${p.name}${p.owner ? ' <span class="pr-owner">(dono)</span>' : ''}</span>` +
+            `<span class="pr-lvl">Nv ${p.level || 1}</span></div>` +
             ((data.isOwner && !p.owner) ? `<span class="pr-kick" data-cid="${p.cid}">✕</span>` : '');
         pl.appendChild(el);
     });
     pl.querySelectorAll('.pr-kick').forEach(k => k.onclick = () => post('menuKick', { cid: k.dataset.cid }));
 
+    // ---- detalhes do contrato selecionado ----
+    const det = $('menu-details');
+    const sel = regions.find(r => r.selected);
+    if (sel) {
+        const tasks = (sel.tasks || []).map(t => `<div class="det-row"><span class="det-dot"></span>${t.count} ${t.label}</div>`).join('');
+        const items = (data.rewardItems || []).map(it => `<div class="det-row"><span class="det-dot gold"></span>${it.item} <span class="det-mut">(${it.chance}%)</span></div>`).join('');
+        det.innerHTML =
+            `<div class="det-sec"><div class="det-label">TAREFAS</div>${tasks || '<div class="det-empty">—</div>'}</div>` +
+            (items ? `<div class="det-sec"><div class="det-label">ITENS DE RECOMPENSA</div>${items}</div>` : '') +
+            (data.requiredItem ? `<div class="det-sec"><div class="det-label">EXIGE</div><div class="det-row"><span class="det-dot red"></span>${data.requiredItem}</div></div>` : '') +
+            `<div class="det-rewards"><div class="det-rw money"><span>RECOMPENSA</span>$ ${brl(sel.money)}</div><div class="det-rw xp"><span>EXP</span>${brl(sel.xp)} XP</div></div>`;
+    } else {
+        det.innerHTML = '<div class="det-empty">Selecione um contrato para ver os detalhes.</div>';
+    }
+
+    // ---- acoes ----
     $('menu-split').style.display = (data.bossSplit && data.isOwner && players.length > 1) ? 'inline-block' : 'none';
     $('menu-invite').style.display = data.isOwner ? 'inline-block' : 'none';
     $('menu-invite-id').style.display = data.isOwner ? 'inline-block' : 'none';
-
     const start = $('menu-start');
     start.disabled = !data.selectedRegion;
     start.textContent = data.selectedRegion ? 'INICIAR TRABALHO' : 'SELECIONE UM CONTRATO';

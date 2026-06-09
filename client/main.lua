@@ -74,13 +74,29 @@ local function buildMenuPayload(data)
         local d = Config.Disciplines[id]
         disciplines[#disciplines + 1] = { id = id, label = d.label, icon = d.icon, locked = data.level < (d.minLevel or 0) }
     end
+    -- monta a lista de tarefas de uma regiao (usa Config, que e shared)
+    local function regionTasks(d, r)
+        local tasks = {}
+        if d.kind == 'towing' then
+            tasks[#tasks + 1] = { count = r.towCount or 3, label = d.taskLabels.tow or 'Reboque' }
+        elseif d.kind == 'towers' then
+            tasks[#tasks + 1] = { count = r.towCount or 3, label = d.taskLabels.fix or 'Reparar Torre' }
+        elseif r.jobTasks then
+            for _, t in ipairs(r.jobTasks) do
+                tasks[#tasks + 1] = { count = t.count, label = (d.taskLabels and d.taskLabels[t.name]) or t.name }
+            end
+        end
+        return tasks
+    end
     local regions = {}
     if disc then
         for _, r in ipairs(disc.regions) do
             regions[#regions + 1] = {
                 key = r.key, title = r.title, money = r.awards.money, xp = r.awards.xp, minLevel = r.minLevel,
+                maxPlayers = r.maxPlayers or 4,
                 locked = data.level < r.minLevel,
                 selected = (data.region and data.region.key == r.key) or false,
+                tasks = regionTasks(disc, r),
             }
         end
     end
@@ -88,12 +104,20 @@ local function buildMenuPayload(data)
     for cid, p in pairs(data.players or {}) do
         players[#players + 1] = { cid = cid, name = p.name, level = p.level, owner = (cid == data.ownerCid) }
     end
+    -- itens de recompensa (global) p/ o painel de detalhes
+    local rewardItems = {}
+    for _, ri in ipairs(Config.RewardItems or {}) do
+        if ri.item then rewardItems[#rewardItems + 1] = { item = ri.item, amount = ri.amount or 1, chance = ri.chance or 0 } end
+    end
     return {
         name = data.name, level = data.level, xp = data.xp, nextXp = data.nextXp, money = data.money,
         isOwner = data.isOwner, maxPlayers = data.maxPlayers or Config.MaxPlayersPerLobby,
         bossSplit = Config.BossRewardSplit,
-        disciplines = disciplines, currentDiscipline = discId, regions = regions, players = players,
+        disciplines = disciplines, currentDiscipline = discId, disciplineLabel = disc and disc.label or '',
+        disciplineIcon = disc and disc.icon or '', regions = regions, players = players,
         selectedRegion = data.region and data.region.key or nil,
+        rewardItems = rewardItems,
+        requiredItem = (Config.RequiredItem and Config.RequiredItem.enable) and Config.RequiredItem.name or nil,
     }
 end
 

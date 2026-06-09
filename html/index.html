@@ -153,12 +153,23 @@
     <div id="menu" class="menu hidden">
         <div class="menu-card">
             <header class="menu-head">
-                <div class="menu-title">SECRETARIA DE OBRAS</div>
+                <div class="menu-brand">
+                    <div class="menu-title">SECRETARIA DE OBRAS</div>
+                    <div class="menu-sub" id="menu-sub">Departamento de Obras</div>
+                </div>
                 <div class="menu-profile">
-                    <span id="menu-name">—</span>
-                    <span id="menu-lvl" class="chip">Nv 1</span>
-                    <span id="menu-money" class="chip money">$0</span>
-                    <div class="menu-xp"><div id="menu-xp-bar"></div></div>
+                    <div class="menu-avatar" id="menu-avatar">—</div>
+                    <div class="menu-pinfo">
+                        <div class="menu-prow">
+                            <span id="menu-name" class="menu-pname">—</span>
+                            <span id="menu-money" class="chip money">$0</span>
+                        </div>
+                        <div class="menu-lvlrow">
+                            <span id="menu-lvl" class="menu-lvl">Nv 1</span>
+                            <div class="menu-xp"><div id="menu-xp-bar"></div></div>
+                            <span id="menu-xp-text" class="menu-xp-text">0 / 0 XP</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="menu-close" id="menu-close">✕</div>
             </header>
@@ -166,11 +177,11 @@
             <div class="menu-section-label">FRENTE DE TRABALHO</div>
             <div id="menu-disciplines" class="menu-disciplines"></div>
 
-            <div class="menu-section-label">CONTRATOS</div>
+            <div class="menu-section-label">CONTRATOS <span id="menu-region-count" class="menu-count"></span></div>
             <div id="menu-regions" class="menu-regions"></div>
 
             <div class="menu-bottom">
-                <div class="menu-team">
+                <div class="menu-col menu-team">
                     <div class="menu-section-label">EQUIPE <span id="menu-team-count"></span></div>
                     <div id="menu-players" class="menu-players"></div>
                     <div class="menu-team-actions">
@@ -180,8 +191,12 @@
                     </div>
                     <div id="menu-split-box" class="menu-split-box hidden"></div>
                 </div>
-                <button id="menu-start" class="menu-btn start" disabled>SELECIONE UM CONTRATO</button>
+                <div class="menu-col menu-details">
+                    <div class="menu-section-label">DETALHES DO CONTRATO</div>
+                    <div id="menu-details" class="menu-details-box"></div>
+                </div>
             </div>
+            <button id="menu-start" class="menu-btn start" disabled>SELECIONE UM CONTRATO</button>
         </div>
     </div>
 
